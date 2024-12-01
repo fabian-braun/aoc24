@@ -1,0 +1,10 @@
+[package]
+name = "utilities"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+itertools = { workspace = true, features = [] }
+maplit = { workspace = true, features = [] }
+reqwest = { workspace = true, features = ["default-tls"] }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
