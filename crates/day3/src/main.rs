@@ -1,13 +1,36 @@
 #[tokio::main]
 async fn main() {
-    let content = utilities::get_input(3).await;
-    //                  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,
+    let mut content = utilities::get_input(3).await;
+    let mut total = 0i64;
+    loop {
+        // println!("{}", content);
+        let idx_no = content.find("don't()");
+        if let Some(idx) = idx_no {
+            total += compute_subtotal(&content[0..idx]);
+            content = content[idx..].to_string();
+            let idx_yes = content.find("do()");
+            if let Some(idx) = idx_yes {
+                content = content[idx..].to_string();
+            } else {
+                break;
+            }
+        } else {
+            total += compute_subtotal(&content);
+            break;
+        }
+    }
+
+    println!("Part I solution: {}", total);
+}
+
+fn compute_subtotal(substr: &str) -> i64 {
     let pattern = vec!['m', 'u', 'l', '(', '0', '0', '0', ',', '0', '0', '0', ')'];
     let mut idx = 0;
     let mut total = 0i64;
     let mut first_num = "".to_string();
     let mut second_num = "".to_string();
-    content.chars().for_each(|c| {
+
+    substr.chars().for_each(|c| {
         if idx == 4 {
             match c {
                 '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' => {
@@ -50,8 +73,7 @@ async fn main() {
             }
         }
     });
-
-    println!("Part I solution: {}", total);
+    total
 }
 
 #[cfg(test)]
