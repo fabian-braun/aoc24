@@ -1,6 +1,8 @@
+use ndarray::{Array2, ArrayBase, Ix2, OwnedRepr};
 use std::fs::{create_dir_all, read_to_string, File};
 use std::io;
 
+type M = Array2<char>;
 pub async fn get_example(day: usize) -> String {
     let file_name = example_file_name(day);
     if File::open(&file_name).is_err() {
@@ -45,4 +47,16 @@ async fn download_example(day: usize) {
     }
     let mut out = File::create(example_file_name(day)).expect("failed to create file");
     io::copy(&mut example.as_bytes(), &mut out).expect("failed to write file");
+}
+
+pub fn char_matrix(raw: String) -> ArrayBase<OwnedRepr<char>, Ix2> {
+    let y_len = raw.lines().count();
+    let x_len = raw.lines().next().unwrap().len();
+    let mut m = M::default((y_len, x_len));
+    raw.lines().enumerate().for_each(|(y, line)| {
+        line.chars().enumerate().for_each(|(x, c)| {
+            m[(y, x)] = c;
+        })
+    });
+    m
 }

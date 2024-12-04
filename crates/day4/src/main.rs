@@ -1,36 +1,28 @@
 use itertools::Itertools;
-use ndarray::Array2;
-
-type M = Array2<char>;
+use ndarray::{Array2, Axis};
 
 #[tokio::main]
 async fn main() {
-    let content = utilities::get_example(4).await;
-    let y_len = content.lines().count();
-    let x_len = content.lines().next().unwrap().len();
-    let mut m = M::default((y_len, x_len));
-    let mut x_coordinates = vec![];
-    content.lines().enumerate().for_each(|(y, line)| {
-        line.chars().enumerate().for_each(|(x, c)| match c {
-            'X' => {
-                m[(y, x)] = c;
-                x_coordinates.push((y as i64, x as i64));
-            }
-            'M' | 'A' | 'S' => m[(y, x)] = c,
-            _ => m[(y, x)] = ' ',
-        })
-    });
+    let content = utilities::get_input(4).await;
+    let m = utilities::char_matrix(content);
     let mut result = 0;
-    for x in x_coordinates {
-        for c in candidates(x, y_len as i64, x_len as i64) {
-            if 'M' == m[(c[0].0 as usize, c[0].1 as usize)]
-                && 'A' == m[(c[1].0 as usize, c[1].1 as usize)]
-                && 'S' == m[(c[2].0 as usize, c[2].1 as usize)]
-            {
-                result += 1;
+    m.indexed_iter().for_each(|((y, x), &c)| match c {
+        'X' => {
+            for c in candidates(
+                (y as i64, x as i64),
+                m.len_of(Axis(0)) as i64,
+                m.len_of(Axis(1)) as i64,
+            ) {
+                if 'M' == m[(c[0].0 as usize, c[0].1 as usize)]
+                    && 'A' == m[(c[1].0 as usize, c[1].1 as usize)]
+                    && 'S' == m[(c[2].0 as usize, c[2].1 as usize)]
+                {
+                    result += 1;
+                }
             }
         }
-    }
+        _ => {}
+    });
 
     println!("Part I solution: {}", result);
 }
