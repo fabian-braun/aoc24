@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use ndarray::{Array2, Axis};
+use ndarray::Axis;
 
 #[tokio::main]
 async fn main() {
@@ -13,9 +13,9 @@ async fn main() {
                 m.len_of(Axis(0)) as i64,
                 m.len_of(Axis(1)) as i64,
             ) {
-                if 'M' == m[(c[0].0 as usize, c[0].1 as usize)]
-                    && 'A' == m[(c[1].0 as usize, c[1].1 as usize)]
-                    && 'S' == m[(c[2].0 as usize, c[2].1 as usize)]
+                if 'M' == m[(c[0].0, c[0].1)]
+                    && 'A' == m[(c[1].0, c[1].1)]
+                    && 'S' == m[(c[2].0, c[2].1)]
                 {
                     result += 1;
                 }
@@ -27,7 +27,7 @@ async fn main() {
     println!("Part I solution: {}", result);
 }
 
-fn candidates((y, x): (i64, i64), y_len: i64, x_len: i64) -> Vec<[(i64, i64); 3]> {
+fn candidates((y, x): (i64, i64), y_len: i64, x_len: i64) -> Vec<Vec<(usize, usize)>> {
     [
         [(y, x + 1), (y, x + 2), (y, x + 3)],
         [(y + 1, x + 1), (y + 2, x + 2), (y + 3, x + 3)],
@@ -43,6 +43,12 @@ fn candidates((y, x): (i64, i64), y_len: i64, x_len: i64) -> Vec<[(i64, i64); 3]
         coords
             .iter()
             .all(|(y, x)| y < &y_len && x < &x_len && y >= &0 && x >= &0)
+    })
+    .map(|coords| {
+        coords
+            .into_iter()
+            .map(|(y, x)| (y as usize, x as usize))
+            .collect_vec()
     })
     .collect_vec()
 }
