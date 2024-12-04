@@ -1,4 +1,4 @@
-use itertools::Itertools;
+use itertools::{iproduct, Itertools};
 use ndarray::Axis;
 use utilities::M;
 
@@ -33,29 +33,29 @@ async fn main() {
 }
 
 fn candidates((y, x): (i64, i64), y_len: i64, x_len: i64) -> Vec<Vec<(usize, usize)>> {
-    [
-        [(y, x + 1), (y, x + 2), (y, x + 3)],
-        [(y + 1, x + 1), (y + 2, x + 2), (y + 3, x + 3)],
-        [(y + 1, x), (y + 2, x), (y + 3, x)],
-        [(y + 1, x - 1), (y + 2, x - 2), (y + 3, x - 3)],
-        [(y, x - 1), (y, x - 2), (y, x - 3)],
-        [(y - 1, x - 1), (y - 2, x - 2), (y - 3, x - 3)],
-        [(y - 1, x), (y - 2, x), (y - 3, x)],
-        [(y - 1, x + 1), (y - 2, x + 2), (y - 3, x + 3)],
-    ]
-    .into_iter()
-    .filter(|coords| {
-        coords
-            .iter()
-            .all(|(y, x)| y < &y_len && x < &x_len && y >= &0 && x >= &0)
-    })
-    .map(|coords| {
-        coords
-            .into_iter()
-            .map(|(y, x)| (y as usize, x as usize))
-            .collect_vec()
-    })
-    .collect_vec()
+    let offsets = [[1, 2, 3], [-1, -2, -3], [0, 0, 0]];
+    let mut candidates = vec![];
+    for (offset_y, offset_x) in iproduct!(offsets.clone(), offsets) {
+        candidates.push([
+            (y + offset_y[0], x + offset_x[0]),
+            (y + offset_y[1], x + offset_x[1]),
+            (y + offset_y[2], x + offset_x[2]),
+        ]);
+    }
+    candidates
+        .into_iter()
+        .filter(|coords| {
+            coords
+                .iter()
+                .all(|(y, x)| y < &y_len && x < &x_len && y >= &0 && x >= &0)
+        })
+        .map(|coords| {
+            coords
+                .into_iter()
+                .map(|(y, x)| (y as usize, x as usize))
+                .collect_vec()
+        })
+        .collect_vec()
 }
 
 const P: [char; 4] = ['X', 'M', 'A', 'S'];
