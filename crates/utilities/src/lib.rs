@@ -2,7 +2,8 @@ use ndarray::{Array2, ArrayBase, Ix2, OwnedRepr};
 use std::fs::{create_dir_all, read_to_string, File};
 use std::io;
 
-type M = Array2<char>;
+pub type M = Array2<char>;
+
 pub async fn get_example(day: usize) -> String {
     let file_name = example_file_name(day);
     if File::open(&file_name).is_err() {
