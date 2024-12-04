@@ -44,7 +44,6 @@ fn candidates((y, x): (i64, i64), y_len: i64, x_len: i64) -> Vec<Vec<(usize, usi
             ]);
         }
     }
-    println!("candidates {}", candidates.len());
     candidates
         .into_iter()
         .filter(|coords| {
