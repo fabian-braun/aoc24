@@ -36,12 +36,15 @@ fn candidates((y, x): (i64, i64), y_len: i64, x_len: i64) -> Vec<Vec<(usize, usi
     let offsets = [[1, 2, 3], [-1, -2, -3], [0, 0, 0]];
     let mut candidates = vec![];
     for (offset_y, offset_x) in iproduct!(offsets.clone(), offsets) {
-        candidates.push([
-            (y + offset_y[0], x + offset_x[0]),
-            (y + offset_y[1], x + offset_x[1]),
-            (y + offset_y[2], x + offset_x[2]),
-        ]);
+        if !(offset_y[0] == 0 && offset_x[0] == 0) {
+            candidates.push([
+                (y + offset_y[0], x + offset_x[0]),
+                (y + offset_y[1], x + offset_x[1]),
+                (y + offset_y[2], x + offset_x[2]),
+            ]);
+        }
     }
+    println!("candidates {}", candidates.len());
     candidates
         .into_iter()
         .filter(|coords| {
