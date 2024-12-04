@@ -4,7 +4,7 @@ use utilities::M;
 
 #[tokio::main]
 async fn main() {
-    let content = utilities::get_example(4).await;
+    let content = utilities::get_input(4).await;
     let m = utilities::char_matrix(content);
     let mut result = 0;
     let y_len = m.len_of(Axis(0)) as i64;
@@ -26,10 +26,8 @@ async fn main() {
     println!("Part I solution: {}", result);
 
     let mut result = 0;
-    m.indexed_iter().for_each(|((y, x), &c)| match c {
-        'X' => result += dfs(&m, (y as i64, x as i64), y_len, x_len, 0),
-        _ => {}
-    });
+    m.indexed_iter()
+        .for_each(|((y, x), _)| result += dfs(&m, (y as i64, x as i64), y_len, x_len, 0));
 
     println!("Part II solution: {}", result);
 }
