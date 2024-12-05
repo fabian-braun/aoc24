@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 #[tokio::main]
 async fn main() {
-    let content = utilities::get_example(5).await;
+    let content = utilities::get_input(5).await;
     let mut s: HashMap<i64, Vec<i64>> = hashmap! {};
     let mut p: HashMap<i64, Vec<i64>> = hashmap! {};
     let mut updates = vec![];
@@ -30,20 +30,6 @@ async fn main() {
         }
     }
 
-    // topo sort
-    let mut sorted = vec![];
-    let mut rem = p.clone();
-    loop {
-        if rem.is_empty() {
-            break;
-        }
-        let next = *rem.iter().find(|(s, ps)| ps.is_empty()).unwrap().0;
-        rem.remove(&next);
-        rem.values_mut()
-            .for_each(|ps| ps.retain(|elem| elem != &next));
-        sorted.push(next);
-    }
-
     let mut result = 0i64;
     for mut update in updates {
         let is_valid = update
@@ -54,6 +40,22 @@ async fn main() {
             // let mid = update[update.len() / 2];
             // result += mid;
         } else {
+            // topo sort
+            let mut sorted = vec![];
+            let mut rem = p.clone();
+            rem.retain(|k, _| update.iter().contains(k));
+            rem.values_mut()
+                .for_each(|ps| ps.retain(|elem| update.iter().contains(elem)));
+            loop {
+                if rem.is_empty() {
+                    break;
+                }
+                let next = *rem.iter().find(|(s, ps)| ps.is_empty()).unwrap().0;
+                rem.remove(&next);
+                rem.values_mut()
+                    .for_each(|ps| ps.retain(|elem| elem != &next));
+                sorted.push(next);
+            }
             update.sort_by_key(|a| sorted.iter().position(|x| x == a).unwrap());
             println!("{:?}", update);
             let mid = update[update.len() / 2];
