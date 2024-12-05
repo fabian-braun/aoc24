@@ -1,0 +1,54 @@
+use itertools::Itertools;
+use maplit::hashmap;
+use std::collections::HashMap;
+
+#[tokio::main]
+async fn main() {
+    let content = utilities::get_input(5).await;
+    let mut s: HashMap<i64, Vec<i64>> = hashmap! {};
+    let mut p: HashMap<i64, Vec<i64>> = hashmap! {};
+    let mut updates = vec![];
+    let mut updates_started = false;
+    for line in content.lines() {
+        if line.is_empty() {
+            updates_started = true;
+        } else if !updates_started {
+            let mut c_iter = line.split('|');
+            let first: i64 = c_iter.next().unwrap().parse().unwrap();
+            let second: i64 = c_iter.next().unwrap().parse().unwrap();
+            s.entry(first).or_default().push(second);
+            p.entry(second).or_default().push(first);
+        } else {
+            let mut l = vec![];
+            line.split(',').for_each(|x| {
+                let x: i64 = x.parse().unwrap();
+                s.entry(x).or_default();
+                p.entry(x).or_default();
+                l.push(x);
+            });
+            updates.push(l);
+        }
+    }
+
+    let mut result = 0i64;
+    for update in updates {
+        let is_valid = update
+            .iter()
+            .tuple_combinations()
+            .all(|(a, b)| !p[a].contains(b));
+        if is_valid {
+            let mid = update[update.len() / 2];
+            result += mid;
+        } else {
+
+        }
+    }
+
+    println!("Solution: {}", result);
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_something() {}
+}
