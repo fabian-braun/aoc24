@@ -31,7 +31,7 @@ fn turn(prev_direction: Direction) -> Direction {
 #[tokio::main]
 async fn main() {
     let content = utilities::get_input(6).await;
-    let m = char_matrix(content);
+    let mut m = char_matrix(content);
     let guard_pos: (usize, usize) = m
         .indexed_iter()
         .find(|(_, c)| match c {
@@ -42,22 +42,25 @@ async fn main() {
         .0;
     let guard_pos = (guard_pos.0 as i64, guard_pos.1 as i64);
 
+    let y_len = m.len_of(Axis(0));
+    let x_len = m.len_of(Axis(1));
     let mut result = 0;
-for y in 0..m.len_of(Axis(0)) {
-    println!("{} of {}", y, m.len_of(Axis(0)));
-    for x in 0..m.len_of(Axis(1)) {
-        let mut m = m.clone();
-        m[(y, x)] = '#';
-        if is_infinite_loop(guard_pos, m) {
-            result += 1;
+    for y in 0..y_len {
+        println!("{} of {}", y, y_len);
+        for x in 0..x_len {
+            let restore_char = m[(y, x)];
+            m[(y, x)] = '#';
+            if is_infinite_loop(guard_pos, &m) {
+                result += 1;
+            }
+            m[(y, x)] = restore_char;
         }
     }
-}
 
     println!("Solution: {}", result);
 }
 
-fn is_infinite_loop(mut guard_pos: (i64, i64), matrix: M) -> bool {
+fn is_infinite_loop(mut guard_pos: (i64, i64), matrix: &M) -> bool {
     let mut d = Direction::UP;
     let mut visited = hashset! {};
     while 0 <= guard_pos.0
