@@ -11,8 +11,9 @@ async fn main() {
         .parse()
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
-
-    println!("Solution for day {}: {:?}", day, run(content));
+    println!("Example Solution for day {}: \n{:?}\n", day, run(content));
+    let content = utilities::get_input(day).await;
+    println!("Actual Solution for day {}: \n{:?}\n", day, run(content));
 }
 
 fn run(input: String) -> anyhow::Result<String> {
