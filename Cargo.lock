@@ -165,6 +165,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "day6"
+version = "0.1.0"
+dependencies = [
+ "itertools",
+ "maplit",
+ "ndarray 0.16.1",
+ "petgraph",
+ "reqwest",
+ "tokio",
+ "utilities",
+]
+
+[[package]]
 name = "dayX"
 version = "0.1.0"
 dependencies = [
