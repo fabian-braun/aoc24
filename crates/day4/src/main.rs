@@ -1,11 +1,14 @@
-use itertools::{iproduct, Itertools};
 use ndarray::Axis;
 use utilities::M;
 
 #[tokio::main]
 async fn main() {
     let content = utilities::get_input(4).await;
-    let m = utilities::char_matrix(content);
+    println!("Part II solution: {}", run(content).unwrap());
+}
+
+fn run(input: String) -> anyhow::Result<String> {
+    let m = utilities::char_matrix(input)?;
     let mut result = 0;
     let y_len = m.len_of(Axis(0)) as i64;
     let x_len = m.len_of(Axis(1)) as i64;
@@ -25,8 +28,7 @@ async fn main() {
         }
         _ => {}
     });
-
-    println!("Part II solution: {}", result);
+    Ok(result.to_string())
 }
 
 fn corners((y, x): (i64, i64), y_len: i64, x_len: i64) -> Option<Vec<(usize, usize)>> {
@@ -53,6 +55,7 @@ fn corners((y, x): (i64, i64), y_len: i64, x_len: i64) -> Option<Vec<(usize, usi
 
 const P: [char; 4] = ['X', 'M', 'A', 'S'];
 
+#[allow(dead_code)]
 fn dfs(m: &M, (y, x): (i64, i64), y_len: i64, x_len: i64, idx: usize) -> usize {
     if y < 0 || y >= y_len || x < 0 || x >= x_len || m[(y as usize, x as usize)] != P[idx] {
         0

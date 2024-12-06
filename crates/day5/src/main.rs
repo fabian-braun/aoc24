@@ -50,7 +50,7 @@ async fn main() {
                 if rem.is_empty() {
                     break;
                 }
-                let next = *rem.iter().find(|(s, ps)| ps.is_empty()).unwrap().0;
+                let next = *rem.iter().find(|(_s, ps)| ps.is_empty()).unwrap().0;
                 rem.remove(&next);
                 rem.values_mut()
                     .for_each(|ps| ps.retain(|elem| elem != &next));

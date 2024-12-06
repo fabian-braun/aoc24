@@ -1,3 +1,4 @@
+use anyhow::Context;
 use ndarray::Array2;
 use std::fs::{create_dir_all, read_to_string, File};
 use std::io;
@@ -50,14 +51,14 @@ async fn download_example(day: usize) {
     io::copy(&mut example.as_bytes(), &mut out).expect("failed to write file");
 }
 
-pub fn char_matrix(raw: String) -> M {
+pub fn char_matrix(raw: String) -> anyhow::Result<M> {
     let y_len = raw.lines().count();
-    let x_len = raw.lines().next().unwrap().len();
+    let x_len = raw.lines().next().context("char_matrix")?.len();
     let mut m = M::default((y_len, x_len));
     raw.lines().enumerate().for_each(|(y, line)| {
         line.chars().enumerate().for_each(|(x, c)| {
             m[(y, x)] = c;
         })
     });
-    m
+    Ok(m)
 }

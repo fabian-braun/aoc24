@@ -10,4 +10,5 @@ reqwest = { workspace = true, features = ["default-tls"] }
 utilities = { path = "../utilities" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 petgraph = "0.6.5"
-ndarray = "0.16.1"
+ndarray = { workspace = true }
+anyhow = { workspace = true }

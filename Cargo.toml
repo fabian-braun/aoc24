@@ -9,6 +9,8 @@ version = "0.1.0"
 
 [workspace.dependencies]
 itertools = "0.13.0"
-maplit = "1.0.2"
+maplit = "1"
 reqwest = "0.12.9"
 tokio = "1"
+anyhow = "1"
+ndarray = "0.16.1"

@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use maplit::hashset;
 use ndarray::Axis;
 use utilities::{char_matrix, M};
@@ -31,7 +30,7 @@ fn turn(prev_direction: Direction) -> Direction {
 #[tokio::main]
 async fn main() {
     let content = utilities::get_input(6).await;
-    let mut m = char_matrix(content);
+    let mut m = char_matrix(content).unwrap();
     let guard_pos: (usize, usize) = m
         .indexed_iter()
         .find(|(_, c)| match c {

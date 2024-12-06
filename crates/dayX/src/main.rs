@@ -4,10 +4,14 @@ use utilities::char_matrix;
 #[tokio::main]
 async fn main() {
     let content = utilities::get_example(1).await;
-    let matrix = char_matrix(content);
-    let result: usize = matrix.len_of(Axis(0)) * matrix.len_of(Axis(1));
 
-    println!("Solution: {}", result);
+    println!("Solution: {:?}", run(content));
+}
+
+fn run(input: String) -> anyhow::Result<String> {
+    let matrix = char_matrix(input)?;
+    let result: usize = matrix.len_of(Axis(0)) * matrix.len_of(Axis(1));
+    Ok(result.to_string())
 }
 
 #[cfg(test)]
