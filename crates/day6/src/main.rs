@@ -1,6 +1,7 @@
 use maplit::hashset;
 use ndarray::Axis;
 use utilities::{char_matrix, M};
+const VERSION: &str = env!("CARGO_PKG_NAME");
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 enum Direction {
@@ -29,7 +30,12 @@ fn turn(prev_direction: Direction) -> Direction {
 
 #[tokio::main]
 async fn main() {
-    let content = utilities::get_input(6).await;
+    let day = VERSION
+        .strip_prefix("day")
+        .unwrap_or_default()
+        .parse()
+        .unwrap_or(1);
+    let content = utilities::get_input(day).await;
     let mut m = char_matrix(content).unwrap();
     let guard_pos: (usize, usize) = m
         .indexed_iter()

@@ -1,11 +1,18 @@
 use ndarray::Axis;
 use utilities::char_matrix;
 
+const VERSION: &str = env!("CARGO_PKG_NAME");
+
 #[tokio::main]
 async fn main() {
-    let content = utilities::get_example(1).await;
+    let day = VERSION
+        .strip_prefix("day")
+        .unwrap_or_default()
+        .parse()
+        .unwrap_or(1);
+    let content = utilities::get_example(day).await;
 
-    println!("Solution: {:?}", run(content));
+    println!("Solution for day {}: {:?}", day, run(content));
 }
 
 fn run(input: String) -> anyhow::Result<String> {
