@@ -1,5 +1,6 @@
 use maplit::hashset;
 use ndarray::Axis;
+use std::ops::Mul;
 use utilities::{char_matrix, M};
 const VERSION: &str = env!("CARGO_PKG_NAME");
 
@@ -66,17 +67,21 @@ async fn main() {
 }
 
 fn is_infinite_loop(mut guard_pos: (i64, i64), matrix: &M) -> bool {
+    let y_len = matrix.len_of(Axis(0));
+    let x_len = matrix.len_of(Axis(1));
     let mut d = Direction::UP;
-    let mut visited = hashset! {};
+    let mut visited = vec![false; 4 * y_len * x_len];
     while 0 <= guard_pos.0
         && guard_pos.0 < matrix.len_of(Axis(0)) as i64
         && 0 <= guard_pos.1
         && guard_pos.1 < matrix.len_of(Axis(1)) as i64
     {
-        if visited.contains(&(guard_pos, d)) {
+        if visited[d as usize * y_len * x_len + guard_pos.0 as usize * x_len + guard_pos.1 as usize]
+        {
             return true;
         }
-        visited.insert((guard_pos, d));
+        visited[d as usize * y_len * x_len + guard_pos.0 as usize * x_len + guard_pos.1 as usize] =
+            true;
         while matrix.get((peek(guard_pos, d).0 as usize, peek(guard_pos, d).1 as usize))
             == Some(&'#')
         {
