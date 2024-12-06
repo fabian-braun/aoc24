@@ -1,8 +1,9 @@
+use itertools::Itertools;
 use maplit::hashset;
 use ndarray::Axis;
-use utilities::char_matrix;
+use utilities::{char_matrix, M};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 enum Direction {
     UP,
     RIGHT,
@@ -29,7 +30,7 @@ fn turn(prev_direction: Direction) -> Direction {
 
 #[tokio::main]
 async fn main() {
-    let content = utilities::get_example(6).await;
+    let content = utilities::get_input(6).await;
     let matrix = char_matrix(content);
     let guard_pos: (usize, usize) = matrix
         .indexed_iter()
@@ -39,16 +40,35 @@ async fn main() {
         })
         .unwrap()
         .0;
-    let mut guard_pos = (guard_pos.0 as i64, guard_pos.1 as i64);
+    let guard_pos = (guard_pos.0 as i64, guard_pos.1 as i64);
+
+    let mut result = 0;
+    for y in 0..matrix.len_of(Axis(0)) {
+        println!("{} of {}", y, matrix.len_of(Axis(0)));
+        for x in 0..matrix.len_of(Axis(1)) {
+            let mut m = matrix.clone();
+            m[(y, x)] = '#';
+            if is_infinite_loop(guard_pos, m) {
+                result += 1;
+            }
+        }
+    }
+
+    println!("Solution: {}", result);
+}
+
+fn is_infinite_loop(mut guard_pos: (i64, i64), matrix: M) -> bool {
     let mut d = Direction::UP;
-    println!("Guard pos: {:?}", guard_pos);
     let mut visited = hashset! {};
     while 0 <= guard_pos.0
         && guard_pos.0 < matrix.len_of(Axis(0)) as i64
         && 0 <= guard_pos.1
         && guard_pos.1 < matrix.len_of(Axis(0)) as i64
     {
-        visited.insert(guard_pos);
+        if visited.iter().contains(&(guard_pos, d)) {
+            return true;
+        }
+        visited.insert((guard_pos, d));
         while matrix.get((peek(guard_pos, d).0 as usize, peek(guard_pos, d).1 as usize))
             == Some(&'#')
         {
@@ -56,7 +76,7 @@ async fn main() {
         }
         guard_pos = peek(guard_pos, d);
     }
-    println!("Solution: {}", visited.len());
+    false
 }
 
 #[cfg(test)]

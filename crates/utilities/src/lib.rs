@@ -1,4 +1,4 @@
-use ndarray::{Array2, ArrayBase, Ix2, OwnedRepr};
+use ndarray::Array2;
 use std::fs::{create_dir_all, read_to_string, File};
 use std::io;
 
@@ -50,7 +50,7 @@ async fn download_example(day: usize) {
     io::copy(&mut example.as_bytes(), &mut out).expect("failed to write file");
 }
 
-pub fn char_matrix(raw: String) -> ArrayBase<OwnedRepr<char>, Ix2> {
+pub fn char_matrix(raw: String) -> M {
     let y_len = raw.lines().count();
     let x_len = raw.lines().next().unwrap().len();
     let mut m = M::default((y_len, x_len));
