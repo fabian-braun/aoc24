@@ -65,7 +65,7 @@ fn is_infinite_loop(mut guard_pos: (i64, i64), matrix: M) -> bool {
         && 0 <= guard_pos.1
         && guard_pos.1 < matrix.len_of(Axis(0)) as i64
     {
-        if visited.iter().contains(&(guard_pos, d)) {
+        if visited.contains(&(guard_pos, d)) {
             return true;
         }
         visited.insert((guard_pos, d));
