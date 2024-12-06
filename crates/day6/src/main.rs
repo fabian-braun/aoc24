@@ -31,8 +31,8 @@ fn turn(prev_direction: Direction) -> Direction {
 #[tokio::main]
 async fn main() {
     let content = utilities::get_input(6).await;
-    let matrix = char_matrix(content);
-    let guard_pos: (usize, usize) = matrix
+    let m = char_matrix(content);
+    let guard_pos: (usize, usize) = m
         .indexed_iter()
         .find(|(_, c)| match c {
             '^' => true,
@@ -43,10 +43,10 @@ async fn main() {
     let guard_pos = (guard_pos.0 as i64, guard_pos.1 as i64);
 
     let mut result = 0;
-    for y in 0..matrix.len_of(Axis(0)) {
-        println!("{} of {}", y, matrix.len_of(Axis(0)));
-        for x in 0..matrix.len_of(Axis(1)) {
-            let mut m = matrix.clone();
+    for y in 0..m.len_of(Axis(0)) {
+        println!("{} of {}", y, m.len_of(Axis(0)));
+        for x in 0..m.len_of(Axis(1)) {
+            let mut m = m.clone();
             m[(y, x)] = '#';
             if is_infinite_loop(guard_pos, m) {
                 result += 1;
