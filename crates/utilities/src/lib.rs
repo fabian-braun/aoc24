@@ -62,3 +62,55 @@ pub fn char_matrix(raw: String) -> anyhow::Result<M> {
     });
     Ok(m)
 }
+
+pub fn flat_idx_3d((a, b, c): (usize, usize, usize), b_len: usize, c_len: usize) -> usize {
+    a * b_len * c_len + b * c_len + c
+}
+
+pub fn rev_idx_3d(i: usize, b_len: usize, c_len: usize) -> (usize, usize, usize) {
+    let c = i % c_len;
+    let b = (i / c_len) % b_len;
+    let a = i / (c_len * b_len);
+    (a, b, c)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{flat_idx_3d, rev_idx_3d};
+
+    #[test]
+    fn test_flat_idx() {
+        struct TestCase {
+            input: (usize, usize, usize),
+            dims: (usize, usize, usize),
+        }
+        let tests = [
+            TestCase {
+                input: (0, 0, 0),
+                dims: (10, 20, 30),
+            },
+            TestCase {
+                input: (2, 4, 3),
+                dims: (4, 10, 6),
+            },
+            TestCase {
+                input: (1, 2, 3),
+                dims: (10, 20, 30),
+            },
+            TestCase {
+                input: (1, 2, 3),
+                dims: (2, 3, 4),
+            },
+        ];
+        for test in tests {
+            assert_eq!(
+                test.input,
+                rev_idx_3d(
+                    flat_idx_3d(test.input, test.dims.1, test.dims.2),
+                    test.dims.1,
+                    test.dims.2
+                )
+            )
+        }
+    }
+}
