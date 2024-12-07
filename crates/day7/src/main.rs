@@ -11,8 +11,8 @@ async fn main() {
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
-    // let content = utilities::get_input(day).await;
-    // println!("Actual Solution for day {}: \n{:?}\n", day, run(content));
+    let content = utilities::get_input(day).await;
+    println!("Actual Solution for day {}: \n{:?}\n", day, run(content));
 }
 
 fn run(input: String) -> anyhow::Result<String> {
@@ -26,7 +26,7 @@ fn run(input: String) -> anyhow::Result<String> {
                 .split_ascii_whitespace()
                 .map(|x| x.parse().unwrap())
                 .collect_vec();
-            if dfs(tv, 0_i64, &rhs, 0) {
+            if dfs(tv, rhs[0], &rhs, 1) {
                 println!("✅ {}", line);
                 Some(tv)
             } else {
@@ -41,17 +41,12 @@ fn run(input: String) -> anyhow::Result<String> {
 fn dfs(tgt: i64, tv_c: i64, rhs: &[i64], i: usize) -> bool {
     if tv_c > tgt || i >= rhs.len() {
         false
-    } else if i == rhs.len() - 2
-        && (tv_c + cc(rhs[i], rhs[i + 1]) == tgt || tv_c * cc(rhs[i], rhs[i + 1]) == tgt)
-    {
-        true
     } else if i == rhs.len() - 1 {
-        tv_c + rhs[i] == tgt || tv_c * rhs[i] == tgt
+        tv_c + rhs[i] == tgt || tv_c * rhs[i] == tgt || cc(tv_c, rhs[i]) == tgt
     } else {
         dfs(tgt, tv_c + rhs[i], rhs, i + 1)
             || dfs(tgt, tv_c * rhs[i], rhs, i + 1)
-            || dfs(tgt, tv_c + cc(rhs[i], rhs[i + 1]), rhs, i + 2)
-            || dfs(tgt, tv_c * cc(rhs[i], rhs[i + 1]), rhs, i + 2)
+            || dfs(tgt, cc(tv_c, rhs[i]), rhs, i + 1)
     }
 }
 
