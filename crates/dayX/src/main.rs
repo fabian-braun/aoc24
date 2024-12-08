@@ -33,17 +33,27 @@ fn run(input: String) -> anyhow::Result<String> {
     let mut unique_locations = hashset! {};
     antenna_groups.into_iter().for_each(|(_c, coords)| {
         for ((y1, x1), (y2, x2)) in coords.iter().tuple_combinations() {
-            let dy: i64 = *y1 as i64 - *y2 as i64;
-            let dx: i64 = *x1 as i64 - *x2 as i64;
-            let y3: i64 = *y1 as i64 + dy;
-            let x3: i64 = *x1 as i64 + dx;
-            let y4: i64 = *y2 as i64 - dy;
-            let x4: i64 = *x2 as i64 - dx;
-            if y3 >= 0 && y3 < y_len && x3 >= 0 && x3 < x_len {
+            let y1 = *y1 as i64;
+            let x1 = *x1 as i64;
+            let y2 = *y2 as i64;
+            let x2 = *x2 as i64;
+            unique_locations.insert((y1, x1));
+            unique_locations.insert((y2, x2));
+            let dy: i64 = y1 - y2;
+            let dx: i64 = x1 - x2;
+            let mut y3: i64 = y1 + dy;
+            let mut x3: i64 = x1 + dx;
+            let mut y4: i64 = y2 - dy;
+            let mut x4: i64 = x2 - dx;
+            while y3 >= 0 && y3 < y_len && x3 >= 0 && x3 < x_len {
                 unique_locations.insert((y3, x3));
+                y3 = y3 + dy;
+                x3 = x3 + dx;
             }
-            if y4 >= 0 && y4 < y_len && x4 >= 0 && x4 < x_len {
+            while y4 >= 0 && y4 < y_len && x4 >= 0 && x4 < x_len {
                 unique_locations.insert((y4, x4));
+                y4 = y4 - dy;
+                x4 = x4 - dx;
             }
         }
     });
