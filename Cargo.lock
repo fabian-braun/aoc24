@@ -199,6 +199,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "day8"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "maplit",
+ "ndarray 0.16.1",
+ "petgraph",
+ "reqwest",
+ "tokio",
+ "utilities",
+]
+
+[[package]]
 name = "dayX"
 version = "0.1.0"
 dependencies = [
