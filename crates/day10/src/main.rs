@@ -18,14 +18,13 @@ async fn main() {
 
 fn run(input: String) -> anyhow::Result<String> {
     let (m, b) = uint_matrix(input)?;
-    let mut b = b;
     let starts: Vec<(usize, usize)> = m
         .indexed_iter()
         .filter_map(|((y, x), &c)| if c == 0 { Some((y, x)) } else { None })
         .collect();
     let result: usize = starts
         .iter()
-        .map(|(y, x)| dfs(0, (*y, *x), &m, &mut b))
+        .map(|(y, x)| dfs(0, (*y, *x), &m, &mut b.clone()))
         .sum();
     Ok(result.to_string())
 }
@@ -33,6 +32,7 @@ fn run(input: String) -> anyhow::Result<String> {
 fn dfs(tgt: u8, pos: (usize, usize), m: &M, b: &mut B) -> usize {
     let result = if m[pos] == tgt {
         if tgt == 9 && !b[pos] {
+            b[pos] = true;
             1
         } else {
             dfs(
@@ -60,7 +60,6 @@ fn dfs(tgt: u8, pos: (usize, usize), m: &M, b: &mut B) -> usize {
     } else {
         0
     };
-    b[pos] = true;
     result
 }
 
