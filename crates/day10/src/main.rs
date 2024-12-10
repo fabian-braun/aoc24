@@ -31,8 +31,7 @@ fn run(input: String) -> anyhow::Result<String> {
 
 fn dfs(tgt: u8, pos: (usize, usize), m: &M, b: &mut B) -> usize {
     let result = if m[pos] == tgt {
-        if tgt == 9 && !b[pos] {
-            b[pos] = true;
+        if tgt == 9 {
             1
         } else {
             dfs(
