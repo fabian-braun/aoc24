@@ -45,7 +45,7 @@ fn compute_count(num: u64, remaining_blinks: usize, memo: &mut HashMap<(u64, usi
     } else {
         compute_count(num * 2024, remaining_blinks, memo)
     };
-    memo.insert((num, remaining_blinks), result);
+    memo.insert((num, remaining_blinks + 1), result);
     result
 }
 
