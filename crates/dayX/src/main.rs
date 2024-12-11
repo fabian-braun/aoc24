@@ -1,3 +1,4 @@
+use std::time::Instant;
 use ndarray::Axis;
 use utilities::char_matrix;
 
@@ -13,7 +14,10 @@ async fn main() {
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
     let content = utilities::get_input(day).await;
-    println!("Actual Solution for day {}: \n{:?}\n", day, run(content));
+    let start = Instant::now();
+    let solution = run(content);
+    let time_taken = start.elapsed();
+    println!("Actual Solution for day {}: \n{:?}\nin time {:?}", day, solution, time_taken);
 }
 
 fn run(input: String) -> anyhow::Result<String> {

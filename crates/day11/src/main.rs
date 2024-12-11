@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use maplit::hashmap;
 use std::collections::HashMap;
+use std::time::Instant;
 
 const VERSION: &str = env!("CARGO_PKG_NAME");
 
@@ -14,17 +15,21 @@ async fn main() {
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
     let content = utilities::get_input(day).await;
-    println!("Actual Solution for day {}: \n{:?}\n", day, run(content));
+
+    let start = Instant::now();
+    let solution = run(content);
+    let time_taken = start.elapsed();
+    println!("Actual Solution for day {}: \n{:?}\nin time {:?}", day, solution, time_taken);
 }
 
 fn run(input: String) -> anyhow::Result<String> {
-    let mut stones: Vec<u64> = input
+    let stones: Vec<u64> = input
         .split_ascii_whitespace()
         .map(|s| s.parse().unwrap())
         .collect_vec();
     let mut total_stones = 0;
+    let mut h: HashMap<(u64, usize), usize> = hashmap! {};
     stones.into_iter().for_each(|num| {
-        let mut h: HashMap<(u64, usize), usize> = hashmap! {};
         total_stones += compute_count(num, 75, &mut h);
         dbg!(&h.len());
     });
