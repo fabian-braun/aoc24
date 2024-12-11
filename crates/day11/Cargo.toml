@@ -1,0 +1,14 @@
+[package]
+name = "day11"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+itertools = { workspace = true, features = [] }
+maplit = { workspace = true, features = [] }
+reqwest = { workspace = true, features = ["default-tls"] }
+utilities = { path = "../utilities" }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+petgraph = "0.6.5"
+ndarray = { workspace = true }
+anyhow = { workspace = true }
