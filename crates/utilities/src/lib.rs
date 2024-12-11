@@ -1,7 +1,9 @@
 use anyhow::Context;
 use ndarray::Array2;
+use reqwest::header;
+use reqwest::header::HeaderMap;
 use std::fs::{create_dir_all, read_to_string, File};
-use std::io;
+use std::{env, io};
 
 pub type M = Array2<char>;
 
@@ -15,6 +17,9 @@ pub async fn get_example(day: usize) -> String {
 
 pub async fn get_input(day: usize) -> String {
     let file_name = input_file_name(day);
+    if File::open(&file_name).is_err() {
+        download_input(day).await;
+    }
     read_to_string(file_name).unwrap()
 }
 
@@ -49,6 +54,28 @@ async fn download_example(day: usize) {
     }
     let mut out = File::create(example_file_name(day)).expect("failed to create file");
     io::copy(&mut example.as_bytes(), &mut out).expect("failed to write file");
+}
+
+async fn download_input(day: usize) {
+    _ = create_dir_all("data");
+    let session_cookie = env::var("AOC_SESSION_TOKEN").unwrap().to_string();
+    let mut request_headers = HeaderMap::new();
+    request_headers.insert(
+        header::COOKIE,
+        header::HeaderValue::from_str(&format!("session={}", session_cookie)).unwrap(),
+    );
+    let client = reqwest::ClientBuilder::new()
+        .default_headers(request_headers)
+        .build()
+        .unwrap();
+    let resp = client
+        .get(format!("https://adventofcode.com/2024/day/{day}/input"))
+        .send()
+        .await
+        .expect("request failed");
+    let body = resp.text().await.expect("body invalid");
+    let mut out = File::create(input_file_name(day)).expect("failed to create file");
+    io::copy(&mut body.as_bytes(), &mut out).expect("failed to write file");
 }
 
 pub fn char_matrix(raw: String) -> anyhow::Result<M> {
