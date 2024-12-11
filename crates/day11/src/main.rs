@@ -25,7 +25,7 @@ fn run(input: String) -> anyhow::Result<String> {
     let mut total_stones = 0;
     stones.into_iter().for_each(|num| {
         let mut h: HashMap<(u64, usize), usize> = hashmap! {};
-        total_stones += compute_count(num, 25, &mut h);
+        total_stones += compute_count(num, 75, &mut h);
     });
     Ok(total_stones.to_string())
 }
