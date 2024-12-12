@@ -1,6 +1,7 @@
-use std::time::Instant;
+use anyhow::Context;
 use ndarray::Axis;
-use utilities::{char_matrix, B, I, M};
+use std::time::Instant;
+use utilities::{B, I, M};
 
 const VERSION: &str = env!("CARGO_PKG_NAME");
 
@@ -22,14 +23,28 @@ async fn main() {
         day, solution, time_taken
     );
 }
+pub fn padded_char_matrix(raw: String) -> anyhow::Result<M> {
+    let y_len = raw.lines().count() + 2;
+    let x_len = raw.lines().next().context("char_matrix")?.len() + 2;
+    let mut m = M::default((y_len, x_len));
+    raw.lines().enumerate().for_each(|(y, line)| {
+        line.chars().enumerate().for_each(|(x, c)| {
+            m[(y + 1, x + 1)] = c;
+        })
+    });
+    Ok(m)
+}
 
 fn run(input: String) -> anyhow::Result<String> {
-    let m = char_matrix(input)?;
+    let m = padded_char_matrix(input)?;
     assert!(m.is_square());
     let cnt = m.len_of(Axis(0));
     let mut area = I::default((cnt, cnt));
     let mut known = B::default((cnt, cnt));
     m.indexed_iter().for_each(|((y, x), c)| {
+        if y == 0 || x == 0 || y == cnt - 1 || x == cnt - 1 {
+            return;
+        }
         let mut explored = vec![];
         explore_region((y, x), *c, &m, &mut explored, &mut known);
         let cnt = explored.len();
@@ -38,8 +53,8 @@ fn run(input: String) -> anyhow::Result<String> {
         }
     });
     let mut total_fence = 0;
-    for i0 in 0..cnt {
-        for j1 in 1..cnt {
+    for i0 in 1..cnt - 1 {
+        for j1 in 2..cnt - 1 {
             if m[(i0, j1 - 1)] != m[(i0, j1)] {
                 total_fence += area[(i0, j1 - 1)];
                 total_fence += area[(i0, j1)];
@@ -49,10 +64,10 @@ fn run(input: String) -> anyhow::Result<String> {
                 total_fence += area[(j1, i0)];
             }
         }
-        total_fence += area[(0, i0)];
-        total_fence += area[(i0, 0)];
-        total_fence += area[(cnt - 1, i0)];
-        total_fence += area[(i0, cnt - 1)];
+        total_fence += area[(1, i0)];
+        total_fence += area[(i0, 1)];
+        total_fence += area[(cnt - 2, i0)];
+        total_fence += area[(i0, cnt - 2)];
     }
 
     Ok(total_fence.to_string())
@@ -70,17 +85,19 @@ fn explore_region(
     }
     explored.push(start);
     known[start] = true;
-    for n in neighbours(start, m) {
+    for n in neighbours(start) {
         explore_region(n, r, m, explored, known);
     }
 }
 
-fn neighbours(x: (usize, usize), m: &M) -> [(usize, usize); 4] {
+fn count_sides(region: &[(usize, usize)]) {}
+
+fn neighbours(x: (usize, usize)) -> [(usize, usize); 4] {
     [
-        (x.0, (x.1 + 1).min(m.len_of(Axis(1)) - 1)),
-        (x.0, x.1.checked_sub(1).unwrap_or(0)),
-        ((x.0 + 1).min(m.len_of(Axis(0)) - 1), x.1),
-        (x.0.checked_sub(1).unwrap_or(0), x.1),
+        (x.0, x.1 + 1),
+        (x.0, x.1 - 1),
+        (x.0 + 1, x.1),
+        (x.0 - 1, x.1),
     ]
 }
 
