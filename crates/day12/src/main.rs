@@ -14,14 +14,14 @@ async fn main() {
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
-    let content = utilities::get_input(day).await;
-    let start = Instant::now();
-    let solution = run(content);
-    let time_taken = start.elapsed();
-    println!(
-        "Actual Solution for day {}: \n{:?}\nin time {:?}",
-        day, solution, time_taken
-    );
+    // let content = utilities::get_input(day).await;
+    // let start = Instant::now();
+    // let solution = run(content);
+    // let time_taken = start.elapsed();
+    // println!(
+    //     "Actual Solution for day {}: \n{:?}\nin time {:?}",
+    //     day, solution, time_taken
+    // );
 }
 pub fn padded_char_matrix(raw: String) -> anyhow::Result<M> {
     let y_len = raw.lines().count() + 2;
@@ -75,25 +75,25 @@ fn run(input: String) -> anyhow::Result<String> {
         let idx = (i, 1);
         let cmp = up(idx);
         if m[idx] != m[cmp] {
-            println!("A: {:?}->{:?}", cmp, idx);
+            println!("⬇️|: {:?}->{:?}", cmp, idx);
             total_fence += area[idx]
         }
         let idx = (1, i);
         let cmp = left(idx);
         if m[idx] != m[cmp] {
-            println!("B: {:?}->{:?}", cmp, idx);
+            println!(" ➡️: {:?}->{:?}", cmp, idx);
             total_fence += area[idx]
         }
         let idx = (i, cnt - 2);
         let cmp = up(idx);
         if m[idx] != m[cmp] {
-            println!("C: {:?}->{:?}", cmp, idx);
+            println!("|⬇️: {:?}->{:?}", cmp, idx);
             total_fence += area[idx]
         }
         let idx = (cnt - 2, i);
         let cmp = left(idx);
         if m[idx] != m[cmp] {
-            println!("D: {:?}->{:?}", cmp, idx);
+            println!(" ➡️: {:?}->{:?}", cmp, idx);
             total_fence += area[idx]
         }
     }
