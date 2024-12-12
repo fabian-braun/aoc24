@@ -1,7 +1,11 @@
+use crate::DIR::LEFT;
 use anyhow::Context;
+use itertools::Itertools;
+use maplit::hashset;
 use ndarray::Axis;
 use std::time::Instant;
 use utilities::{B, I, M};
+use DIR::{DOWN, RIGHT, UP};
 
 const VERSION: &str = env!("CARGO_PKG_NAME");
 
@@ -41,78 +45,24 @@ fn run(input: String) -> anyhow::Result<String> {
     let cnt = m.len_of(Axis(0));
     let mut area = I::default((cnt, cnt));
     let mut known = B::default((cnt, cnt));
-    m.indexed_iter().for_each(|((y, x), c)| {
-        if y == 0 || x == 0 || y == cnt - 1 || x == cnt - 1 {
-            return;
-        }
-        let mut explored = vec![];
-        explore_region((y, x), *c, &m, &mut explored, &mut known);
-        let cnt = explored.len();
-        for e in explored {
-            area[e] = cnt;
-        }
-    });
-    let mut total_fence = 0;
-    for i0 in 1..cnt - 1 {
-        for j1 in 2..cnt - 1 {
-            if m[(i0, j1 - 1)] != m[(i0, j1)]
-            // fence found
-            {
-                println!("➡️: {:?}->{:?}", (i0, j1 - 1), (i0, j1));
-                if m[(i0 - 1, j1 - 1)] != m[(i0, j1 - 1)] {
-                    println!("{:?}", (i0, j1 - 1));
-                    total_fence += area[(i0, j1 - 1)];
-                }
-                if m[(i0, j1)] != m[(i0 - 1, j1)] {
-                    println!("{:?}", (i0, j1));
-                    total_fence += area[(i0, j1)];
-                }
+    let cost = m
+        .indexed_iter()
+        .map(|((y, x), c)| {
+            if y == 0 || x == 0 || y == cnt - 1 || x == cnt - 1 {
+                return;
             }
-            if m[(j1 - 1, i0)] != m[(j1, i0)]
-            // fence found
-            {
-                println!("⬇️: {:?}->{:?}", (j1 - 1, i0), (j1, i0));
-                if m[(j1 - 1, i0)] != m[(j1 - 1, i0 - 1)] {
-                    println!("{:?}", (j1 - 1, i0));
-                    total_fence += area[(j1 - 1, i0)]
-                }
-                if m[(j1, i0)] != m[(j1, i0 - 1)] {
-                    println!("{:?}", (j1, i0));
-                    total_fence += area[(j1, i0)]
-                }
+            let mut explored = vec![];
+            explore_region((y, x), *c, &m, &mut explored, &mut known);
+            let cnt = explored.len();
+            for e in &explored {
+                area[e] = cnt;
             }
-        }
-    }
+            let sides = count_sides(&mut explored, *c, &m);
+            sides
+        })
+        .sum();
 
-    println!("Border ========================");
-    for i in 1..cnt - 1 {
-        let idx = (i, 1);
-        let cmp = up(idx);
-        if m[idx] != m[cmp] {
-            println!("⬇️|: {:?}->{:?}", cmp, idx);
-            total_fence += area[idx]
-        }
-        let idx = (1, i);
-        let cmp = left(idx);
-        if m[idx] != m[cmp] {
-            println!(" ➡️: {:?}->{:?}", cmp, idx);
-            total_fence += area[idx]
-        }
-        let idx = (i, cnt - 2);
-        let cmp = up(idx);
-        if m[idx] != m[cmp] {
-            println!("|⬇️: {:?}->{:?}", cmp, idx);
-            total_fence += area[idx]
-        }
-        let idx = (cnt - 2, i);
-        let cmp = left(idx);
-        if m[idx] != m[cmp] {
-            println!(" ➡️: {:?}->{:?}", cmp, idx);
-            total_fence += area[idx]
-        }
-    }
-
-    Ok(total_fence.to_string())
+    Ok(cost.to_string())
 }
 
 fn left((y, x): (usize, usize)) -> (usize, usize) {
@@ -122,6 +72,47 @@ fn up((y, x): (usize, usize)) -> (usize, usize) {
     (y - 1, x)
 }
 
+fn count_sides(region: &mut [(usize, usize)], r: char, m: &M) -> usize {
+    if region.len() < 3 {
+        4
+    } else {
+        let sides = 1;
+        region.sort_unstable();
+        let mut prev = hashset! {};
+        for (a, b) in region.iter().tuple_windows() {
+            if a.0 == b.0 {
+                if a.1 + 1 != b.1 {  }
+            }
+        }
+        3
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+enum DIR {
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN,
+}
+impl DIR {
+    fn go(self, (y, x): (usize, usize)) -> (usize, usize) {
+        match self {
+            LEFT => (y, x - 1),
+            RIGHT => (y, x + 1),
+            UP => (y - 1, x),
+            DOWN => (y + 1, x),
+        }
+    }
+    fn turn(self) -> Self {
+        match self {
+            LEFT => DOWN,
+            RIGHT => UP,
+            UP => LEFT,
+            DOWN => RIGHT,
+        }
+    }
+}
 fn explore_region(
     start: (usize, usize),
     r: char,
