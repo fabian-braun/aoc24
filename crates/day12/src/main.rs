@@ -55,22 +55,57 @@ fn run(input: String) -> anyhow::Result<String> {
     let mut total_fence = 0;
     for i0 in 1..cnt - 1 {
         for j1 in 2..cnt - 1 {
-            if m[(i0, j1 - 1)] != m[(i0, j1)] {
+            if m[(i0, j1 - 1)] != m[(i0, j1)] // fence found
+                && (m[(i0 - 1, j1 - 1)] != m[(i0, j1 - 1)] || m[(i0, j1)] != m[(i0 - 1, j1)])
+            {
+                // println!("{:?}->{:?}", (i0, j1 - 1), (i0, j1));
                 total_fence += area[(i0, j1 - 1)];
                 total_fence += area[(i0, j1)];
             }
-            if m[(j1 - 1, i0)] != m[(j1, i0)] {
+            if m[(j1 - 1, i0)] != m[(j1, i0)] // fence found
+                && (m[(j1 - 1, i0)] != m[(j1 - 1, i0 - 1)] || m[(j1, i0)] != m[(j1, i0 - 1)])
+            {
+                // println!("{:?}->{:?}", (j1 - 1, i0), (j1, i0));
                 total_fence += area[(j1 - 1, i0)];
                 total_fence += area[(j1, i0)];
             }
         }
-        total_fence += area[(1, i0)];
-        total_fence += area[(i0, 1)];
-        total_fence += area[(cnt - 2, i0)];
-        total_fence += area[(i0, cnt - 2)];
+    }
+    for i in 1..cnt - 1 {
+        let idx = (i, 1);
+        let cmp = up(idx);
+        if m[idx] != m[cmp] {
+            println!("A: {:?}->{:?}", cmp, idx);
+            total_fence += area[idx]
+        }
+        let idx = (1, i);
+        let cmp = left(idx);
+        if m[idx] != m[cmp] {
+            println!("B: {:?}->{:?}", cmp, idx);
+            total_fence += area[idx]
+        }
+        let idx = (i, cnt - 2);
+        let cmp = up(idx);
+        if m[idx] != m[cmp] {
+            println!("C: {:?}->{:?}", cmp, idx);
+            total_fence += area[idx]
+        }
+        let idx = (cnt - 2, i);
+        let cmp = left(idx);
+        if m[idx] != m[cmp] {
+            println!("D: {:?}->{:?}", cmp, idx);
+            total_fence += area[idx]
+        }
     }
 
     Ok(total_fence.to_string())
+}
+
+fn left((y, x): (usize, usize)) -> (usize, usize) {
+    (y, x - 1)
+}
+fn up((y, x): (usize, usize)) -> (usize, usize) {
+    (y - 1, x)
 }
 
 fn explore_region(
@@ -89,8 +124,6 @@ fn explore_region(
         explore_region(n, r, m, explored, known);
     }
 }
-
-fn count_sides(region: &[(usize, usize)]) {}
 
 fn neighbours(x: (usize, usize)) -> [(usize, usize); 4] {
     [
