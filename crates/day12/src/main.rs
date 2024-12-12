@@ -55,22 +55,36 @@ fn run(input: String) -> anyhow::Result<String> {
     let mut total_fence = 0;
     for i0 in 1..cnt - 1 {
         for j1 in 2..cnt - 1 {
-            if m[(i0, j1 - 1)] != m[(i0, j1)] // fence found
-                && (m[(i0 - 1, j1 - 1)] != m[(i0, j1 - 1)] || m[(i0, j1)] != m[(i0 - 1, j1)])
+            if m[(i0, j1 - 1)] != m[(i0, j1)]
+            // fence found
             {
-                // println!("{:?}->{:?}", (i0, j1 - 1), (i0, j1));
-                total_fence += area[(i0, j1 - 1)];
-                total_fence += area[(i0, j1)];
+                println!("➡️: {:?}->{:?}", (i0, j1 - 1), (i0, j1));
+                if m[(i0 - 1, j1 - 1)] != m[(i0, j1 - 1)] {
+                    println!("{:?}", (i0, j1 - 1));
+                    total_fence += area[(i0, j1 - 1)];
+                }
+                if m[(i0, j1)] != m[(i0 - 1, j1)] {
+                    println!("{:?}", (i0, j1));
+                    total_fence += area[(i0, j1)];
+                }
             }
-            if m[(j1 - 1, i0)] != m[(j1, i0)] // fence found
-                && (m[(j1 - 1, i0)] != m[(j1 - 1, i0 - 1)] || m[(j1, i0)] != m[(j1, i0 - 1)])
+            if m[(j1 - 1, i0)] != m[(j1, i0)]
+            // fence found
             {
-                // println!("{:?}->{:?}", (j1 - 1, i0), (j1, i0));
-                total_fence += area[(j1 - 1, i0)];
-                total_fence += area[(j1, i0)];
+                println!("⬇️: {:?}->{:?}", (j1 - 1, i0), (j1, i0));
+                if m[(j1 - 1, i0)] != m[(j1 - 1, i0 - 1)] {
+                    println!("{:?}", (j1 - 1, i0));
+                    total_fence += area[(j1 - 1, i0)]
+                }
+                if m[(j1, i0)] != m[(j1, i0 - 1)] {
+                    println!("{:?}", (j1, i0));
+                    total_fence += area[(j1, i0)]
+                }
             }
         }
     }
+
+    println!("Border ========================");
     for i in 1..cnt - 1 {
         let idx = (i, 1);
         let cmp = up(idx);
