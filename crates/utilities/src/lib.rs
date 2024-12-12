@@ -6,6 +6,8 @@ use std::fs::{create_dir_all, read_to_string, File};
 use std::{env, io};
 
 pub type M = Array2<char>;
+pub type B = Array2<bool>;
+pub type I = Array2<usize>;
 
 pub async fn get_example(day: usize) -> String {
     let file_name = example_file_name(day);
