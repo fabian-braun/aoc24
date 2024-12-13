@@ -91,10 +91,14 @@ impl PartialOrd for State {
     }
 }
 
+// fn h(from: (u64, usize), min_d: (u64, usize), to: (u64, usize)) -> usize {
+//     let rem_y = to.0.checked_sub(from.0).unwrap_or(0);
+//     let rem_x = to.1.checked_sub(from.1).unwrap_or(0);
+//     (rem_y / min_d.0).min((rem_x / min_d.1) as u64) as usize
+// }
+
 fn h(from: (u64, usize), min_d: (u64, usize), to: (u64, usize)) -> usize {
-    let rem_y = to.0.checked_sub(from.0).unwrap_or(0);
-    let rem_x = to.1.checked_sub(from.1).unwrap_or(0);
-    (rem_y / min_d.0).min((rem_x / min_d.1) as u64) as usize
+    0
 }
 
 fn solve_riddle(
@@ -108,9 +112,12 @@ fn solve_riddle(
     };
     min_costs.insert(start.position, start.cost);
     heap.push(start);
+    let mut max_heap = 0;
     while let Some(State { position, .. }) = heap.pop() {
+        max_heap = heap.len().max(max_heap);
         let cost = min_costs[&position];
         if position == (ty, tx) {
+            dbg!(max_heap);
             return Some(cost);
         }
         if position.0 > ty || position.1 > tx {
@@ -138,6 +145,7 @@ fn solve_riddle(
             heap.push(next);
         }
     }
+    dbg!(max_heap);
     None
 }
 
