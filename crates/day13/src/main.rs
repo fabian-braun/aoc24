@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 use std::time::Instant;
@@ -92,6 +91,12 @@ impl PartialOrd for State {
     }
 }
 
+fn h(from: (u64, usize), min_d: (u64, usize), to: (u64, usize)) -> usize {
+    let rem_y = to.0.checked_sub(from.0).unwrap_or(0);
+    let rem_x = to.1.checked_sub(from.1).unwrap_or(0);
+    (rem_y / min_d.0).min((rem_x / min_d.1) as u64) as usize
+}
+
 fn solve_riddle(
     ((dy1, dx1), (dy2, dx2), (ty, tx)): ((u64, usize), (u64, usize), (u64, usize)),
 ) -> Option<usize> {
@@ -103,7 +108,8 @@ fn solve_riddle(
     };
     min_costs.insert(start.position, start.cost);
     heap.push(start);
-    while let Some(State { cost, position }) = heap.pop() {
+    while let Some(State { position, .. }) = heap.pop() {
+        let cost = min_costs[&position];
         if position == (ty, tx) {
             return Some(cost);
         }
@@ -113,21 +119,23 @@ fn solve_riddle(
         if cost > min_costs[&position] {
             continue;
         }
-        let next = State {
+        let mut next = State {
             cost: cost + 3,
             position: (position.0 + dy1, position.1 + dx1),
         };
         if next.cost < *min_costs.get(&next.position).unwrap_or(&usize::MAX) {
-            heap.push(next);
             min_costs.insert(next.position, next.cost);
+            next.cost += h(next.position, (dy1.min(dy2), dx1.min(dx2)), (ty, tx));
+            heap.push(next);
         }
-        let next = State {
+        let mut next = State {
             cost: cost + 1,
             position: (position.0 + dy2, position.1 + dx2),
         };
         if next.cost < *min_costs.get(&next.position).unwrap_or(&usize::MAX) {
-            heap.push(next);
             min_costs.insert(next.position, next.cost);
+            next.cost += h(next.position, (dy1.min(dy2), dx1.min(dx2)), (ty, tx));
+            heap.push(next);
         }
     }
     None
