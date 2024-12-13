@@ -15,14 +15,14 @@ async fn main() {
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
-    // let content = utilities::get_input(day).await;
-    // let start = Instant::now();
-    // let solution = run(content);
-    // let time_taken = start.elapsed();
-    // println!(
-    //     "Actual Solution for day {}: \n{:?}\nin time {:?}",
-    //     day, solution, time_taken
-    // );
+    let content = utilities::get_input(day).await;
+    let start = Instant::now();
+    let solution = run(content);
+    let time_taken = start.elapsed();
+    println!(
+        "Actual Solution for day {}: \n{:?}\nin time {:?}",
+        day, solution, time_taken
+    );
 }
 pub fn padded_char_matrix(raw: String) -> anyhow::Result<M> {
     let y_len = raw.lines().count() + 2;
@@ -67,6 +67,7 @@ fn run(input: String) -> anyhow::Result<String> {
                 && m[region[r_idx]] != m[region[(r_idx + 3) % 4]]
             {
                 // found a convex corner at (y,x)
+                cost += area[region[r_idx]]
             } else if m[region[r_idx]] == m[region[(r_idx + 1) % 4]]
                 && m[region[r_idx]] == m[region[(r_idx + 3) % 4]]
                 && m[region[r_idx]] != m[region[(r_idx + 2) % 4]]
