@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-use std::collections::{BinaryHeap, HashMap};
 use std::time::Instant;
 
 const VERSION: &str = env!("CARGO_PKG_NAME");
@@ -58,99 +56,58 @@ fn run(input: String) -> anyhow::Result<String> {
                 .unwrap();
             ((dy1, dx1), (dy2, dx2), (y, x))
         })
-        .filter_map(|riddle| solve_riddle(riddle))
+        .filter_map(|riddle| solve_riddle(riddle.0, riddle.1, riddle.2))
         .sum();
     Ok(result.to_string())
 }
 
-#[derive(Copy, Clone, Eq, PartialEq)]
-struct State {
-    cost: usize,
-    position: (u64, usize),
+fn solve_riddle(v1: (u64, usize), v2: (u64, usize), t: (u64, usize)) -> Option<usize> {
+    solve_eq(v1, v2, t).map(|(a, b)| a * 3 + b)
 }
 
-// The priority queue depends on `Ord`.
-// Explicitly implement the trait so the queue becomes a min-heap
-// instead of a max-heap.
-impl Ord for State {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // Notice that we flip the ordering on costs.
-        // In case of a tie we compare positions - this step is necessary
-        // to make implementations of `PartialEq` and `Ord` consistent.
-        other
-            .cost
-            .cmp(&self.cost)
-            .then_with(|| self.position.cmp(&other.position))
-    }
-}
-
-// `PartialOrd` needs to be implemented as well.
-impl PartialOrd for State {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-// fn h(from: (u64, usize), min_d: (u64, usize), to: (u64, usize)) -> usize {
-//     let rem_y = to.0.checked_sub(from.0).unwrap_or(0);
-//     let rem_x = to.1.checked_sub(from.1).unwrap_or(0);
-//     (rem_y / min_d.0).min((rem_x / min_d.1) as u64) as usize
-// }
-
-fn h(from: (u64, usize), min_d: (u64, usize), to: (u64, usize)) -> usize {
-    0
-}
-
-fn solve_riddle(
-    ((dy1, dx1), (dy2, dx2), (ty, tx)): ((u64, usize), (u64, usize), (u64, usize)),
-) -> Option<usize> {
-    let mut heap = BinaryHeap::new();
-    let mut min_costs = HashMap::new();
-    let start = State {
-        cost: 0,
-        position: (0, 0),
+fn solve_eq(
+    (dy1, dx1): (u64, usize),
+    (dy2, dx2): (u64, usize),
+    (ty, tx): (u64, usize),
+) -> Option<(usize, usize)> {
+    let (a, b) = if dy1 / dy2 == (dx1 / dx2) as u64 && dy2 / dy1 == (dx2 / dx1) as u64 {
+        // the first button is 3 times more expensive
+        if dy1 / dy2 >= 3 {
+            (tx / dx1, 0_usize)
+        } else {
+            (0_usize, tx / dx2)
+        }
+    } else {
+        let t1 = ty as f64;
+        let t2 = tx as f64;
+        let v11 = dy1 as f64;
+        let v12 = dx1 as f64;
+        let v21 = dy2 as f64;
+        let v22 = dx2 as f64;
+        let b = (t2 - ((t1 * v12) / (v11))) / (v22 - (v21 * v12) / (v11));
+        let a = (t1 - b * v21) / (v11);
+        let b = b.max(0.0).round() as usize;
+        let a = a.max(0.0).round() as usize;
+        (a, b)
     };
-    min_costs.insert(start.position, start.cost);
-    heap.push(start);
-    let mut max_heap = 0;
-    while let Some(State { position, .. }) = heap.pop() {
-        max_heap = heap.len().max(max_heap);
-        let cost = min_costs[&position];
-        if position == (ty, tx) {
-            dbg!(max_heap);
-            return Some(cost);
-        }
-        if position.0 > ty || position.1 > tx {
-            continue;
-        }
-        if cost > min_costs[&position] {
-            continue;
-        }
-        let mut next = State {
-            cost: cost + 3,
-            position: (position.0 + dy1, position.1 + dx1),
-        };
-        if next.cost < *min_costs.get(&next.position).unwrap_or(&usize::MAX) {
-            min_costs.insert(next.position, next.cost);
-            next.cost += h(next.position, (dy1.min(dy2), dx1.min(dx2)), (ty, tx));
-            heap.push(next);
-        }
-        let mut next = State {
-            cost: cost + 1,
-            position: (position.0 + dy2, position.1 + dx2),
-        };
-        if next.cost < *min_costs.get(&next.position).unwrap_or(&usize::MAX) {
-            min_costs.insert(next.position, next.cost);
-            next.cost += h(next.position, (dy1.min(dy2), dx1.min(dx2)), (ty, tx));
-            heap.push(next);
-        }
+    if a * dy1 as usize + b * dy2 as usize == ty as usize && a * dx1 + b * dx2 == tx {
+        Some((a, b))
+    } else {
+        None
     }
-    dbg!(max_heap);
-    None
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::solve_eq;
+
     #[test]
-    fn test_something() {}
+    fn test_something() {
+        assert_eq!(Some((1, 1)), solve_eq((11, 21), (3, 5), (14, 26)));
+        assert_eq!(None, solve_eq((1, 1), (2, 2), (14, 26)));
+        assert_eq!(Some((0, 7)), solve_eq((1, 1), (2, 2), (14, 14)));
+        assert_eq!(Some((0, 2)), solve_eq((1, 1), (7, 7), (14, 14)));
+        assert_eq!(Some((0, 14)), solve_eq((2, 2), (1, 1), (14, 14)));
+        assert_eq!(Some((80, 40)), solve_eq((34, 94), (67, 22), (5400, 8400)));
+    }
 }
