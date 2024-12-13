@@ -80,16 +80,16 @@ fn solve_eq(
             (0_usize, tx / dx2)
         }
     } else {
-        let t1 = ty as f64;
-        let t2 = tx as f64;
-        let v11 = dy1 as f64;
-        let v12 = dx1 as f64;
-        let v21 = dy2 as f64;
-        let v22 = dx2 as f64;
-        let b = (t2 - ((t1 * v12) / (v11))) / (v22 - (v21 * v12) / (v11));
-        let a = (t1 - b * v21) / (v11);
-        let b = b.max(0.0).round() as usize;
-        let a = a.max(0.0).round() as usize;
+        let t1 = ty as i64;
+        let t2 = tx as i64;
+        let v11 = dy1 as i64;
+        let v12 = dx1 as i64;
+        let v21 = dy2 as i64;
+        let v22 = dx2 as i64;
+        let b = (t2 * v11 - t1 * v12) / (v22 * v11 - v21 * v12);
+        let a = (t1 - b * v21) / v11;
+        let b = b.max(0) as usize;
+        let a = a.max(0) as usize;
         (a, b)
     };
     if a * dy1 as usize + b * dy2 as usize == ty as usize && a * dx1 + b * dx2 == tx {
