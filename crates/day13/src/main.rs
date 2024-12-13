@@ -54,6 +54,8 @@ fn run(input: String) -> anyhow::Result<String> {
                     (y, x)
                 })
                 .unwrap();
+            let y = y + 10000000000000;
+            let x = x + 10000000000000;
             ((dy1, dx1), (dy2, dx2), (y, x))
         })
         .filter_map(|riddle| solve_riddle(riddle.0, riddle.1, riddle.2))
