@@ -1,5 +1,4 @@
 use anyhow::Context;
-use itertools::Itertools;
 use ndarray::Axis;
 use std::time::Instant;
 use utilities::{B, I, M};
@@ -57,7 +56,7 @@ fn run(input: String) -> anyhow::Result<String> {
     let mut cost = 0;
 
     // count corners: convex & concave
-    m.indexed_iter().for_each(|((y, x), c)| {
+    m.indexed_iter().for_each(|((y, x), _c)| {
         if y == cnt - 1 || x == cnt - 1 {
             return;
         }
