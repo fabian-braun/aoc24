@@ -79,14 +79,13 @@ fn move_robot(
     dim: (usize, u64),
     mut times: usize,
 ) -> (usize, u64) {
-    dbg!(robot);
     let mut pos = robot.0;
     let d = robot.1;
     let mut dd = dim;
-    while (d.0.abs() as usize) >= dim.0 {
+    while (d.0.abs() as usize) >= dd.0 {
         dd.0 += dim.0;
     };
-    while (d.1.abs() as u64) >= dim.1 {
+    while (d.1.abs() as u64) >= dd.1 {
         dd.1 += dim.1;
     };
     assert!((d.0.abs() as usize) < dd.0);
