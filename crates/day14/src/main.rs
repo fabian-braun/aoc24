@@ -1,5 +1,8 @@
+use average::Variance;
 use itertools::Itertools;
+use ndarray::Axis;
 use std::time::Instant;
+use utilities::{B, I, M};
 
 const VERSION: &str = env!("CARGO_PKG_NAME");
 
@@ -11,19 +14,21 @@ async fn main() {
         .parse()
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
-    println!("Example Solution for day {}: \n{:?}\n", day, run(content));
+    // println!("Example Solution for day {}: \n{:?}\n", day, run(content));
     let content = utilities::get_input(day).await;
     let start = Instant::now();
     let solution = run(content);
     let time_taken = start.elapsed();
-    println!("Actual Solution for day {}: \n{:?}\nin time {:?}", day, solution, time_taken);
+    println!(
+        "Actual Solution for day {}: \n{:?}\nin time {:?}",
+        day, solution, time_taken
+    );
 }
 
 // X,Y
 fn run(input: String) -> anyhow::Result<String> {
     let dim: (usize, u64) = (101, 103);
-    let half_idx = (dim.0 / 2, dim.1 / 2);
-    let robots = input
+    let mut robots = input
         .lines()
         .filter_map(|line| {
             if line.is_empty() {
@@ -42,36 +47,51 @@ fn run(input: String) -> anyhow::Result<String> {
             }
         })
         .collect_vec();
-    let mut tl = 0;
-    let mut tr = 0;
-    let mut bl = 0;
-    let mut br = 0;
-    robots.into_iter().filter_map(|robot| {
-        let pos = move_robot(robot, dim, 100);
-        (pos.0 != half_idx.0 && pos.1 != half_idx.1).then_some(pos)
-    }).for_each(|pos|{
-        if pos.0 < half_idx.0 {
-            // left
-            if pos.1 < half_idx.1 {
-                // top
-                tl += 1;
-            } else {
-                // bottom
-                bl += 1;
-            }
-        } else {
-            // right
-            if pos.1 < half_idx.1 {
-                // top
-                tr += 1;
-            } else {
-                // bottom
-                br += 1;
-            }
+    let mut seconds = 0;
+    let mut min_variance = f64::MAX;
+    let mut max_seconds = 0;
+    while seconds < 10001 {
+        let variance = robot_position_variance(&robots);
+        if variance < min_variance {
+            min_variance = variance;
+            max_seconds = seconds;
+            println!("####################################################################################     {}", seconds);
+            print_christmas_tree(&robots, dim);
         }
-    });
-    let result: usize = tl * tr * bl * br;
-    Ok(result.to_string())
+        robots = robots
+            .into_iter()
+            .map(|mut robot| {
+                let pos = move_robot(robot, dim, 1);
+                robot.0 = pos;
+                robot
+            })
+            .collect_vec();
+        seconds += 1;
+    }
+    Ok(max_seconds.to_string())
+}
+// wrong 15, 25, 66
+
+fn robot_position_variance(robots: &[((usize, u64), (isize, i64))]) -> f64 {
+    let x_variance: Variance = robots.iter().map(|x| x.0 .0 as f64).collect();
+    let y_variance: Variance = robots.iter().map(|x| x.0 .1 as f64).collect();
+
+    x_variance.sample_variance() + y_variance.sample_variance()
+}
+
+fn print_christmas_tree(robots: &[((usize, u64), (isize, i64))], dim: (usize, u64)) {
+    let mut m = M::default((dim.0, dim.1 as usize));
+    m.fill(' ');
+    for r in robots {
+        m[(r.0 .0, r.0 .1 as usize)] = 'X';
+    }
+    for y in 0..m.len_of(Axis(1)) {
+        println!();
+        for x in 0..m.len_of(Axis(0)) {
+            print!("{}", m[(x, y)]);
+        }
+    }
+    println!();
 }
 
 fn move_robot(
@@ -84,10 +104,10 @@ fn move_robot(
     let mut dd = dim;
     while (d.0.abs() as usize) >= dd.0 {
         dd.0 += dim.0;
-    };
+    }
     while (d.1.abs() as u64) >= dd.1 {
         dd.1 += dim.1;
-    };
+    }
     assert!((d.0.abs() as usize) < dd.0);
     assert!((d.1.abs() as u64) < dd.1);
     while times > 0 {
@@ -104,6 +124,4 @@ fn move_robot(
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn test_something() {}
 }
