@@ -28,6 +28,30 @@ fn run(input: String) -> anyhow::Result<String> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
-    fn test_something() {}
+    fn test_examples() {
+        struct Example {
+            content: &'static str,
+            expected: &'static str,
+        }
+        let examples = [
+            Example {
+                content: "1",
+                expected: "1",
+            },
+            Example {
+                content: "1",
+                expected: "1",
+            },
+        ];
+        for (i, ex) in examples.iter().enumerate() {
+            assert_eq!(
+                ex.expected.to_string(),
+                run(ex.content.to_string()).unwrap(),
+                "example {} failed:",
+                i + 1
+            );
+        }
+    }
 }
