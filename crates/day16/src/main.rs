@@ -50,7 +50,7 @@ fn run(input: String) -> anyhow::Result<String> {
     let end = (1, x_len - 2);
     println!("search path from {start:?} to {end:?}");
     let mut min_cost = hashmap! { start.1 => start.0 };
-    let mut pred: HashMap<(usize, usize), HashSet<(usize, usize)>> = hashmap! {};
+    let mut pred: HashMap<(usize, usize), (usize, usize)> = hashmap! {};
     let mut heap = BinaryHeap::new();
     heap.push(Reverse(start));
     while let Some(Reverse((cost, pos, d))) = heap.pop() {
@@ -62,49 +62,49 @@ fn run(input: String) -> anyhow::Result<String> {
                 heap.push(Reverse(n));
                 min_cost.insert(n.1, n.0);
                 c_m[n.1] = n.0 as usize;
-                pred.entry(n.1).or_default().insert(pos);
+                pred.insert(n.1, pos);
             }
         })
     }
-    print(&m, &c_m);
+    // print(&m, &c_m);
 
-    let mut tiles = hashset![];
-    let mut curr = vec![end];
-    while let Some(c) = curr.pop() {
-        tiles.insert(c);
-        let pred = pred.get(&c);
-        pred.map(|pred| pred.iter().for_each(|p| curr.push(*p)));
+    let mut s_p = hashset![end];
+    let mut curr = end;
+    while let Some(c) = pred.get(&curr) {
+        s_p.insert(*c);
+        curr = *c
     }
-    Ok(tiles.len().to_string())
+    let mut result = count_tiles(start, &min_cost, &m);
+    result.insert(start.1);
+    Ok(result.len().to_string())
 }
 
 fn count_tiles(
     current: (u64, (usize, usize), (isize, isize)),
     min_cost: &HashMap<(usize, usize), u64>,
     m: &M,
-) -> usize {
-    if current.0 > min_cost[&current.1] {
-        0
-    } else if m[current.1] == 'E' {
-        1
+) -> HashSet<(usize, usize)> {
+    let res = if current.0 > min_cost[&current.1] + 2000 {
+        hashset! {}
+    } else if m[current.1] == 'E' && current.0 == min_cost[&current.1] {
+        hashset! {current.1}
     } else {
-        neighbours(current.0, current.1, current.2)
-            .into_iter()
-            .map(|n| {
-                if (m[n.1] == '.' || m[n.1] == 'E') && n.0 <= min_cost[&n.1] {
-                    let tiles = count_tiles(n, &min_cost, m);
-                    if tiles > 0 {
-                        println!("{:?}", n.1);
-                        tiles + 1
-                    } else {
-                        0
+        let mut tiles = hashset! {};
+        let neighbours = neighbours(current.0, current.1, current.2);
+        for n in neighbours {
+            if m[n.1] == '.' || m[n.1] == 'E' {
+                let t = count_tiles(n, min_cost, m);
+                if !t.is_empty() {
+                    for t in t {
+                        tiles.insert(t);
                     }
-                } else {
-                    0
+                    tiles.insert(n.1);
                 }
-            })
-            .sum()
-    }
+            }
+        }
+        tiles
+    };
+    res
 }
 
 fn neighbours(
@@ -145,7 +145,6 @@ fn print(m: &M, c_m: &I) {
             } else {
                 print!("      ");
             }
-
         }
     }
     println!();
