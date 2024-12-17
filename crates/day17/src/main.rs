@@ -10,8 +10,8 @@ async fn main() {
         .unwrap_or_default()
         .parse()
         .unwrap_or(1);
-    let content = utilities::get_example(day).await;
-    println!("Example Solution for day {}: \n{:?}\n", day, run(content));
+    // let content = utilities::get_example(day).await;
+    // println!("Example Solution for day {}: \n{:?}\n", day, run(content));
     let content = utilities::get_input(day).await;
     let start = Instant::now();
     let solution = run(content);
@@ -24,7 +24,7 @@ async fn main() {
 
 fn run(input: String) -> anyhow::Result<String> {
     let mut lines = input.lines();
-    let a: u64 = lines
+    let _a: u64 = lines
         .next()
         .unwrap()
         .split_once(": ")
@@ -58,8 +58,17 @@ fn run(input: String) -> anyhow::Result<String> {
         .split(',')
         .map(|c| c.parse().unwrap())
         .collect_vec();
-    let mut result = vec![];
-    let mut register = (a, b, c);
+    for a in 1..100000000 {
+        let register = (a, b, c);
+        if test_program_is_identity(&p, register) {
+            return Ok(a.to_string());
+        }
+    }
+    Ok("shit".to_string())
+}
+
+fn test_program_is_identity(p: &[u8], mut register: (u64, u64, u64)) -> bool {
+    let mut result_idx = 0;
     let mut instr_ptr = 0;
     while instr_ptr < p.len() {
         let opcode = p[instr_ptr];
@@ -91,7 +100,10 @@ fn run(input: String) -> anyhow::Result<String> {
             5 => {
                 let (r, reg) = out(register, arg);
                 register = reg;
-                result.push(r);
+                if r != p[result_idx] as u64 {
+                    return false;
+                }
+                result_idx += 1;
                 instr_ptr += 2;
             }
             6 => {
@@ -107,7 +119,7 @@ fn run(input: String) -> anyhow::Result<String> {
             }
         }
     }
-    Ok(result.into_iter().join(","))
+    result_idx == p.len()
 }
 
 fn resolve(reg: (u64, u64, u64), c_o: u8) -> u64 {
@@ -179,25 +191,6 @@ mod tests {
     use super::*;
     #[test]
     fn test_examples() {
-        struct Example {
-            content: &'static str,
-            expected: &'static str,
-        }
-        let examples = [Example {
-            content: "Register A: 729
-Register B: 0
-Register C: 0
-
-Program: 0,1,5,4,3,0",
-            expected: "4,6,3,5,6,3,5,2,1,0",
-        }];
-        for (i, ex) in examples.iter().enumerate() {
-            assert_eq!(
-                ex.expected.to_string(),
-                run(ex.content.to_string()).unwrap(),
-                "example {} failed:",
-                i + 1
-            );
-        }
+        assert!(test_program_is_identity(&[0, 3, 5, 4, 3, 0], (117440, 0, 0)))
     }
 }
