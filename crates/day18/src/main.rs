@@ -1,8 +1,6 @@
 use itertools::Itertools;
-use maplit::hashmap;
+use maplit::hashset;
 use ndarray::Axis;
-use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
 use std::time::Instant;
 use std::usize;
 use utilities::M;
@@ -43,7 +41,6 @@ fn run(input: String, dim: usize, first_n: usize) -> anyhow::Result<String> {
     }
     let bytes = input
         .lines()
-        .take(first_n)
         .map(|line| {
             let (x, y) = line.split_once(',').unwrap();
             let x: usize = x.parse::<usize>().unwrap() + 1;
@@ -51,37 +48,39 @@ fn run(input: String, dim: usize, first_n: usize) -> anyhow::Result<String> {
             (y, x)
         })
         .collect_vec();
-    bytes.iter().for_each(|byte| {
+    bytes.iter().take(first_n).for_each(|byte| {
         m[*byte] = '#';
     });
     print(&m);
     let start = (1, 1);
     let end = (dim, dim);
-    let mut min_cost = hashmap! { start => 0 };
-    let mut pred: HashMap<(usize, usize), (usize, usize)> = hashmap! {};
-    let mut heap = BinaryHeap::new();
-    heap.push(Reverse((0, start)));
-    while let Some(Reverse((cost, o_pos))) = heap.pop() {
-        if cost > min_cost[&o_pos] {
-            continue;
+    let result = bytes.iter().skip(first_n).find(|&next_byte| {
+        m[*next_byte] = '#';
+        !test_path_exists(start, end, &m)
+    }).unwrap();
+    // invert dimensions and fix padding
+    let result = (result.1 - 1, result.0 - 1);
+
+    Ok(format!("{},{}", result.0, result.1))
+}
+
+fn test_path_exists(start: (usize, usize), end: (usize, usize), m: &M) -> bool {
+    let mut leafs = vec![];
+    let mut visited = hashset! {};
+    leafs.push(start);
+    visited.insert(start);
+    while let Some(pos) = leafs.pop() {
+        if pos == end {
+            return true;
         }
-        let new_cost = cost + 1;
-        neighbors(o_pos).into_iter().for_each(|n_pos| {
-            if new_cost < *min_cost.get(&n_pos).unwrap_or(&usize::MAX) && (m[n_pos] != '#') {
-                heap.push(Reverse((new_cost, n_pos)));
-                min_cost.insert(n_pos, new_cost);
-                pred.insert(n_pos, o_pos);
+        neighbors(pos).into_iter().for_each(|n_pos| {
+            if !visited.contains(&n_pos) && (m[n_pos] != '#') {
+                leafs.push(n_pos);
+                visited.insert(n_pos);
             }
         })
     }
-    let mut path = vec![];
-    let mut curr = end;
-    while let Some(p) = pred.get(&curr) {
-        path.push(*p);
-        curr = *p;
-    }
-
-    Ok(path.len().to_string())
+    false
 }
 
 fn neighbors(pos: (usize, usize)) -> [(usize, usize); 4] {
