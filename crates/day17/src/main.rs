@@ -49,7 +49,7 @@ fn run(input: String) -> anyhow::Result<String> {
         .parse()
         .unwrap();
     let _ = lines.next();
-    let p: Vec<u8> = lines
+    let p: Vec<u64> = lines
         .next()
         .unwrap()
         .split_once(": ")
@@ -58,25 +58,25 @@ fn run(input: String) -> anyhow::Result<String> {
         .split(',')
         .map(|c| c.parse().unwrap())
         .collect_vec();
-    let a = valid_values_for_a(&p);
-    Ok(format!("{:?}", a))
+    let a = valid_values_for_a(&p, &p);
+    Ok(format!("{:?}", a.into_iter().min()))
 }
 
 // Program: 2,4, 1,1, 7,5, 0,3, 1,4, 4,5, 5,5, 3,0
 
-fn valid_values_for_a(p: &[u8]) -> Vec<u64> {
-    if p.len() == 2 {
+fn valid_values_for_a(p: &[u64], expected_output: &[u64]) -> Vec<u64> {
+    if expected_output.len() == 1 {
         (0u64..8u64)
-            .filter(|&a| test_program_produces_output(&p, &p[0..1] (a, 0, 0)))
+            .filter(|&a| test_program_produces_output(&p, &expected_output, (a, 0, 0)))
             .collect_vec()
     } else {
-        let a_candidates = valid_values_for_a(&p);
+        let a_candidates = valid_values_for_a(&p, &expected_output[1..]);
         println!("found candidates for a: {:?}", a_candidates);
         let mut valid_a = vec![];
         for a_candidate in a_candidates {
             for offset in 0u64..8u64 {
                 let a = a_candidate * 8 + offset;
-                if test_program_is_identity(&p, (a, 0, 0)) {
+                if test_program_produces_output(&p, &expected_output, (a, 0, 0)) {
                     valid_a.push(a);
                 }
             }
@@ -85,7 +85,11 @@ fn valid_values_for_a(p: &[u8]) -> Vec<u64> {
     }
 }
 
-fn test_program_produces_output(p: &[u8], expected_output: &[u64], mut register: (u64, u64, u64)) -> bool {
+fn test_program_produces_output(
+    p: &[u64],
+    expected_output: &[u64],
+    mut register: (u64, u64, u64),
+) -> bool {
     let mut output = vec![];
     let mut instr_ptr = 0;
     while instr_ptr < p.len() {
@@ -137,9 +141,9 @@ fn test_program_produces_output(p: &[u8], expected_output: &[u64], mut register:
     output == expected_output
 }
 
-fn resolve(reg: (u64, u64, u64), c_o: u8) -> u64 {
+fn resolve(reg: (u64, u64, u64), c_o: u64) -> u64 {
     match c_o {
-        0..=3 => c_o as u64,
+        0..=3 => c_o,
         4 => reg.0,
         5 => reg.1,
         6 => reg.2,
@@ -147,7 +151,7 @@ fn resolve(reg: (u64, u64, u64), c_o: u8) -> u64 {
     }
 }
 
-fn adv(reg: (u64, u64, u64), c_o: u8) -> (u64, u64, u64) {
+fn adv(reg: (u64, u64, u64), c_o: u64) -> (u64, u64, u64) {
     let c_o = resolve(reg, c_o);
     let numerator = reg.0;
     let denominator = 2_u64.checked_pow(c_o as u32).unwrap();
@@ -155,18 +159,18 @@ fn adv(reg: (u64, u64, u64), c_o: u8) -> (u64, u64, u64) {
     (result, reg.1, reg.2)
 }
 
-fn bxl(reg: (u64, u64, u64), l_o: u8) -> (u64, u64, u64) {
+fn bxl(reg: (u64, u64, u64), l_o: u64) -> (u64, u64, u64) {
     let result = l_o as u64 ^ reg.1;
     (reg.0, result, reg.2)
 }
 
-fn bst(reg: (u64, u64, u64), c_o: u8) -> (u64, u64, u64) {
+fn bst(reg: (u64, u64, u64), c_o: u64) -> (u64, u64, u64) {
     let c_o = resolve(reg, c_o);
     let result = c_o % 8;
     (reg.0, result, reg.2)
 }
 
-fn jnz(reg: (u64, u64, u64), l_o: u8) -> Option<usize> {
+fn jnz(reg: (u64, u64, u64), l_o: u64) -> Option<usize> {
     if reg.0 == 0 {
         None
     } else {
@@ -179,13 +183,13 @@ fn bxc(reg: (u64, u64, u64)) -> (u64, u64, u64) {
     (reg.0, result, reg.2)
 }
 
-fn out(reg: (u64, u64, u64), c_o: u8) -> (u64, (u64, u64, u64)) {
+fn out(reg: (u64, u64, u64), c_o: u64) -> (u64, (u64, u64, u64)) {
     let c_o = resolve(reg, c_o);
     let result = c_o % 8;
     (result, reg)
 }
 
-// fn bdv(reg: (u64, u64, u64), c_o: u8) -> (u64, u64, u64) {
+// fn bdv(reg: (u64, u64, u64), c_o: u64) -> (u64, u64, u64) {
 //     let c_o = resolve(reg, c_o);
 //     let numerator = reg.0;
 //     let denominator = 2_u64.checked_pow(c_o as u32).unwrap();
@@ -193,7 +197,7 @@ fn out(reg: (u64, u64, u64), c_o: u8) -> (u64, (u64, u64, u64)) {
 //     (reg.0, result, reg.2)
 // }
 
-fn cdv(reg: (u64, u64, u64), c_o: u8) -> (u64, u64, u64) {
+fn cdv(reg: (u64, u64, u64), c_o: u64) -> (u64, u64, u64) {
     let c_o = resolve(reg, c_o);
     let numerator = reg.0;
     let denominator = 2_u64.checked_pow(c_o as u32).unwrap();
