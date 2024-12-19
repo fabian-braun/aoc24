@@ -32,7 +32,7 @@ fn run(input: String) -> anyhow::Result<String> {
         .1
         .parse()
         .unwrap();
-    let b: u64 = lines
+    let _b: u64 = lines
         .next()
         .unwrap()
         .split_once(": ")
@@ -40,7 +40,7 @@ fn run(input: String) -> anyhow::Result<String> {
         .1
         .parse()
         .unwrap();
-    let c: u64 = lines
+    let _c: u64 = lines
         .next()
         .unwrap()
         .split_once(": ")
@@ -58,17 +58,35 @@ fn run(input: String) -> anyhow::Result<String> {
         .split(',')
         .map(|c| c.parse().unwrap())
         .collect_vec();
-    for a in 1..100000000 {
-        let register = (a, b, c);
-        if test_program_is_identity(&p, register) {
-            return Ok(a.to_string());
-        }
-    }
-    Ok("shit".to_string())
+    let a = valid_values_for_a(&p);
+    Ok(format!("{:?}", a))
 }
 
-fn test_program_is_identity(p: &[u8], mut register: (u64, u64, u64)) -> bool {
-    let mut result_idx = 0;
+// Program: 2,4, 1,1, 7,5, 0,3, 1,4, 4,5, 5,5, 3,0
+
+fn valid_values_for_a(p: &[u8]) -> Vec<u64> {
+    if p.len() == 2 {
+        (0u64..8u64)
+            .filter(|&a| test_program_produces_output(&p, &p[0..1] (a, 0, 0)))
+            .collect_vec()
+    } else {
+        let a_candidates = valid_values_for_a(&p);
+        println!("found candidates for a: {:?}", a_candidates);
+        let mut valid_a = vec![];
+        for a_candidate in a_candidates {
+            for offset in 0u64..8u64 {
+                let a = a_candidate * 8 + offset;
+                if test_program_is_identity(&p, (a, 0, 0)) {
+                    valid_a.push(a);
+                }
+            }
+        }
+        valid_a
+    }
+}
+
+fn test_program_produces_output(p: &[u8], expected_output: &[u64], mut register: (u64, u64, u64)) -> bool {
+    let mut output = vec![];
     let mut instr_ptr = 0;
     while instr_ptr < p.len() {
         let opcode = p[instr_ptr];
@@ -100,16 +118,13 @@ fn test_program_is_identity(p: &[u8], mut register: (u64, u64, u64)) -> bool {
             5 => {
                 let (r, reg) = out(register, arg);
                 register = reg;
-                if r != p[result_idx] as u64 {
-                    return false;
-                }
-                result_idx += 1;
+                output.push(r);
                 instr_ptr += 2;
             }
-            6 => {
-                register = bdv(register, arg);
-                instr_ptr += 2;
-            }
+            // 6 => {
+            //     register = bdv(register, arg);
+            //     instr_ptr += 2;
+            // }
             7 => {
                 register = cdv(register, arg);
                 instr_ptr += 2;
@@ -119,7 +134,7 @@ fn test_program_is_identity(p: &[u8], mut register: (u64, u64, u64)) -> bool {
             }
         }
     }
-    result_idx == p.len()
+    output == expected_output
 }
 
 fn resolve(reg: (u64, u64, u64), c_o: u8) -> u64 {
@@ -170,13 +185,13 @@ fn out(reg: (u64, u64, u64), c_o: u8) -> (u64, (u64, u64, u64)) {
     (result, reg)
 }
 
-fn bdv(reg: (u64, u64, u64), c_o: u8) -> (u64, u64, u64) {
-    let c_o = resolve(reg, c_o);
-    let numerator = reg.0;
-    let denominator = 2_u64.checked_pow(c_o as u32).unwrap();
-    let result = numerator / denominator;
-    (reg.0, result, reg.2)
-}
+// fn bdv(reg: (u64, u64, u64), c_o: u8) -> (u64, u64, u64) {
+//     let c_o = resolve(reg, c_o);
+//     let numerator = reg.0;
+//     let denominator = 2_u64.checked_pow(c_o as u32).unwrap();
+//     let result = numerator / denominator;
+//     (reg.0, result, reg.2)
+// }
 
 fn cdv(reg: (u64, u64, u64), c_o: u8) -> (u64, u64, u64) {
     let c_o = resolve(reg, c_o);
@@ -191,6 +206,10 @@ mod tests {
     use super::*;
     #[test]
     fn test_examples() {
-        assert!(test_program_is_identity(&[0, 3, 5, 4, 3, 0], (117440, 0, 0)))
+        assert!(test_program_produces_output(
+            &[0, 3, 5, 4, 3, 0],
+            &[0, 3, 5, 4, 3, 0],
+            (117440, 0, 0)
+        ))
     }
 }
