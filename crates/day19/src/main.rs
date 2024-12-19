@@ -1,7 +1,7 @@
 use itertools::Itertools;
-use ndarray::Axis;
+use maplit::hashmap;
+use std::collections::HashMap;
 use std::time::Instant;
-use utilities::char_matrix;
 
 const VERSION: &str = env!("CARGO_PKG_NAME");
 
@@ -29,22 +29,31 @@ fn run(input: String) -> anyhow::Result<String> {
     let towels = iter.next().unwrap().split(", ").collect_vec();
     let designs = iter.filter(|line| !line.is_empty()).collect_vec();
 
-    let result = designs.iter().filter(|design| dfs(&towels, design)).count();
+    let result: usize = designs
+        .iter()
+        .map(|design| dfs(&towels, design, 0, &mut hashmap! {}))
+        .sum();
     Ok(result.to_string())
 }
 
-fn dfs(towels: &[&str], design: &str) -> bool {
+fn dfs(towels: &[&str], design: &str, idx: usize, memo: &mut HashMap<usize, usize>) -> usize {
     if design.is_empty() {
-        return true;
+        return 1;
     }
+    let mut rem_cnt = 0;
     for towel in towels {
         if design.starts_with(towel) {
-            if dfs(&towels, &design[towel.len()..]) {
-                return true;
-            }
+            let cnt = if let Some(cnt) = memo.get(&(idx + towel.len())) {
+                *cnt
+            } else {
+                let cnt = dfs(&towels, &design[towel.len()..], idx + towel.len(), memo);
+                memo.insert(idx + towel.len(), cnt);
+                cnt
+            };
+            rem_cnt += cnt;
         }
     }
-    false
+    rem_cnt
 }
 
 #[cfg(test)]
