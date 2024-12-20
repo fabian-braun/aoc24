@@ -2,7 +2,7 @@ use anyhow::Context;
 use maplit::{hashmap, hashset};
 use ndarray::Axis;
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::time::Instant;
 use utilities::M;
 
@@ -17,14 +17,14 @@ async fn main() {
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
-    let content = utilities::get_input(day).await;
-    let start = Instant::now();
-    let solution = run(content);
-    let time_taken = start.elapsed();
-    println!(
-        "Actual Solution for day {}: \n{:?}\nin time {:?}",
-        day, solution, time_taken
-    );
+    // let content = utilities::get_input(day).await;
+    // let start = Instant::now();
+    // let solution = run(content);
+    // let time_taken = start.elapsed();
+    // println!(
+    //     "Actual Solution for day {}: \n{:?}\nin time {:?}",
+    //     day, solution, time_taken
+    // );
 }
 
 fn run(input: String) -> anyhow::Result<String> {
@@ -56,7 +56,45 @@ fn run(input: String) -> anyhow::Result<String> {
         curr = *c
     }
 
+    let saved = &mut vec![0_usize; (min_cost[&end] + 1) as usize];
+    dfs(start, 0, min_cost[&end], 2, &min_cost, &mut hashset! {}, &m, saved);
+    dbg!(saved);
+
     Ok(3.to_string())
+}
+
+fn dfs(
+    pos: (usize, usize),
+    cost: u64,
+    cost_bound: u64,
+    mut cheat_rem: u8,
+    min_cost: &HashMap<(usize, usize), u64>,
+    visited: &mut HashSet<(usize, usize)>,
+    m: &M,
+    saved: &mut [usize],
+) {
+    if cost > *min_cost.get(&pos).unwrap_or(&cost_bound) || visited.contains(&pos) {
+        return;
+    }
+    if m[pos] == 'E' {
+        if cost < min_cost[&pos] {
+            saved[(min_cost[&pos] - cost) as usize] += 1;
+        }
+        return;
+    }
+    visited.insert(pos);
+    neighbours(pos).into_iter().for_each(|n| {
+        if m[n] == '.' || m[n] == 'E' {
+            if cheat_rem == 1 {
+                cheat_rem = cheat_rem - 1;
+            };
+            dfs(n, cost + 1, cost_bound, cheat_rem, min_cost, visited, m, saved)
+        } else if cheat_rem > 0 && m[n] == '#' {
+            cheat_rem = cheat_rem - 1;
+            dfs(n, cost + 1, cost_bound, cheat_rem, min_cost, visited, m, saved)
+        }
+    });
+    visited.remove(&pos);
 }
 
 fn neighbours(x: (usize, usize)) -> [(usize, usize); 4] {
