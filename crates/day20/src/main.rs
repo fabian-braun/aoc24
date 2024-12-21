@@ -77,8 +77,8 @@ fn dfs(
         return;
     }
     if m[pos] == 'E' {
-        if cost < min_cost[&pos] {
-            saved[(min_cost[&pos] - cost) as usize] += 1;
+        if cost < cost_bound {
+            saved[(cost_bound - cost) as usize] += 1;
         }
         return;
     }
@@ -94,7 +94,7 @@ fn dfs(
             dfs(n, cost + 1, cost_bound, cheat_rem, min_cost, visited, m, saved)
         }
     });
-    visited.remove(&pos);
+    assert!(visited.remove(&pos));
 }
 
 fn neighbours(x: (usize, usize)) -> [(usize, usize); 4] {
