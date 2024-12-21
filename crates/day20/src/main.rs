@@ -17,20 +17,20 @@ async fn main() {
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
-    let content = utilities::get_input(day).await;
-    let start = Instant::now();
-    let solution = run(content);
-    let time_taken = start.elapsed();
-    println!(
-        "Actual Solution for day {}: \n{:?}\nin time {:?}",
-        day, solution, time_taken
-    );
+    // let content = utilities::get_input(day).await;
+    // let start = Instant::now();
+    // let solution = run(content);
+    // let time_taken = start.elapsed();
+    // println!(
+    //     "Actual Solution for day {}: \n{:?}\nin time {:?}",
+    //     day, solution, time_taken
+    // );
 }
 
 fn run(input: String) -> anyhow::Result<String> {
     let (m, start, end) = char_matrix(input)?;
 
-    print(&m);
+    // print(&m);
     let mut min_cost = hashmap! { start => 0_u64 };
     let mut pred: HashMap<(usize, usize), (usize, usize)> = hashmap! {};
     let mut heap = BinaryHeap::<Reverse<(u64, (usize, usize))>>::new();
@@ -49,7 +49,7 @@ fn run(input: String) -> anyhow::Result<String> {
         })
     }
 
-    let mut s_p = vec![end];
+    let mut s_p = vec![];
     let mut curr = end;
     while let Some(c) = pred.get(&curr) {
         s_p.push(*c);
@@ -57,81 +57,50 @@ fn run(input: String) -> anyhow::Result<String> {
     }
     s_p.reverse();
 
-    let saved = &mut vec![0_usize; (min_cost[&end] + 1) as usize];
+    let mut saved = vec![0_usize; (min_cost[&end] + 1) as usize];
     s_p.iter().for_each(|&s_p_pos| {
         // try to find short-cut from pos and compute saved time
-        neighbours(s_p_pos).into_iter().for_each(|n1| {
-            if m[n1] == '#' {
-                neighbours(n1).into_iter().for_each(|n2| {
-                    if n2 != s_p_pos && (m[n2] == '.' || m[n2] == 'E') {
-                        let cost_origin = min_cost[&s_p_pos];
-                        let cost_destination = min_cost[&n2];
-                        if cost_origin + 2 < cost_destination {
-                            let saved_cost = cost_destination - 2 - cost_origin;
-                            saved[saved_cost as usize] += 1;
-                        }
-                    }
-                })
-            }
-        });
+        find_shortcuts(s_p_pos, &min_cost, &m, &mut saved);
     });
 
-    // dbg!(&saved);
-    let result: usize = saved.iter().skip(100).sum();
+    dbg!(&saved[50..]);
+    let result: usize = saved.iter().skip(50).sum();
 
     Ok(result.to_string())
 }
 
-fn dfs(
-    pos: (usize, usize),
-    cost: u64,
-    cost_bound: u64,
-    mut cheat_rem: u8,
-    min_cost: &HashMap<(usize, usize), u64>,
-    visited: &mut HashSet<(usize, usize)>,
+fn find_shortcuts(
+    s_p_pos: (usize, usize),
+    original_min_cost: &HashMap<(usize, usize), u64>,
     m: &M,
     saved: &mut [usize],
 ) {
-    if cost > *min_cost.get(&pos).unwrap_or(&cost_bound) || visited.contains(&pos) {
-        return;
-    }
-    if m[pos] == 'E' {
-        if cost < cost_bound {
-            saved[(cost_bound - cost) as usize] += 1;
+    let start_cost = original_min_cost[&s_p_pos];
+    let mut min_cost = hashmap! { s_p_pos => start_cost };
+    let mut heap = BinaryHeap::<Reverse<(u64, (usize, usize))>>::new();
+    heap.push(Reverse((start_cost, s_p_pos)));
+    while let Some(Reverse((cost, pos))) = heap.pop() {
+        if cost > min_cost[&pos] || cost > start_cost + 20 {
+            continue;
         }
-        return;
+        let new_cost: u64 = cost + 1;
+        neighbours(pos).into_iter().for_each(|n| {
+            if new_cost < *min_cost.get(&n).unwrap_or(&u64::MAX) {
+                if m[n] == '.' || m[n] == 'E' {
+                    // we're on a good path again
+                    if new_cost < original_min_cost[&n] {
+                        // we found a shortcut
+                        let saved_cost = original_min_cost[&n] - new_cost;
+                        saved[saved_cost as usize] += 1;
+                        min_cost.insert(n, new_cost);
+                    }
+                } else if m[n] == '#' {
+                    heap.push(Reverse((new_cost, n)));
+                    min_cost.insert(n, new_cost);
+                }
+            }
+        })
     }
-    visited.insert(pos);
-    neighbours(pos).into_iter().for_each(|n| {
-        if m[n] == '.' || m[n] == 'E' {
-            if cheat_rem == 1 {
-                cheat_rem = cheat_rem - 1;
-            };
-            dfs(
-                n,
-                cost + 1,
-                cost_bound,
-                cheat_rem,
-                min_cost,
-                visited,
-                m,
-                saved,
-            )
-        } else if cheat_rem > 0 && m[n] == '#' {
-            cheat_rem = cheat_rem - 1;
-            dfs(
-                n,
-                cost + 1,
-                cost_bound,
-                cheat_rem,
-                min_cost,
-                visited,
-                m,
-                saved,
-            )
-        }
-    });
-    assert!(visited.remove(&pos));
 }
 
 fn neighbours(x: (usize, usize)) -> [(usize, usize); 4] {
