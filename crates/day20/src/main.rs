@@ -17,14 +17,14 @@ async fn main() {
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
-    // let content = utilities::get_input(day).await;
-    // let start = Instant::now();
-    // let solution = run(content);
-    // let time_taken = start.elapsed();
-    // println!(
-    //     "Actual Solution for day {}: \n{:?}\nin time {:?}",
-    //     day, solution, time_taken
-    // );
+    let content = utilities::get_input(day).await;
+    let start = Instant::now();
+    let solution = run(content);
+    let time_taken = start.elapsed();
+    println!(
+        "Actual Solution for day {}: \n{:?}\nin time {:?}",
+        day, solution, time_taken
+    );
 }
 
 fn run(input: String) -> anyhow::Result<String> {
@@ -49,18 +49,37 @@ fn run(input: String) -> anyhow::Result<String> {
         })
     }
 
-    let mut s_p = hashset![end];
+    let mut s_p = vec![end];
     let mut curr = end;
     while let Some(c) = pred.get(&curr) {
-        s_p.insert(*c);
+        s_p.push(*c);
         curr = *c
     }
+    s_p.reverse();
 
     let saved = &mut vec![0_usize; (min_cost[&end] + 1) as usize];
-    dfs(start, 0, min_cost[&end], 2, &min_cost, &mut hashset! {}, &m, saved);
-    dbg!(saved);
+    s_p.iter().for_each(|&s_p_pos| {
+        // try to find short-cut from pos and compute saved time
+        neighbours(s_p_pos).into_iter().for_each(|n1| {
+            if m[n1] == '#' {
+                neighbours(n1).into_iter().for_each(|n2| {
+                    if n2 != s_p_pos && (m[n2] == '.' || m[n2] == 'E') {
+                        let cost_origin = min_cost[&s_p_pos];
+                        let cost_destination = min_cost[&n2];
+                        if cost_origin + 2 < cost_destination {
+                            let saved_cost = cost_destination - 2 - cost_origin;
+                            saved[saved_cost as usize] += 1;
+                        }
+                    }
+                })
+            }
+        });
+    });
 
-    Ok(3.to_string())
+    // dbg!(&saved);
+    let result: usize = saved.iter().skip(100).sum();
+
+    Ok(result.to_string())
 }
 
 fn dfs(
@@ -88,10 +107,28 @@ fn dfs(
             if cheat_rem == 1 {
                 cheat_rem = cheat_rem - 1;
             };
-            dfs(n, cost + 1, cost_bound, cheat_rem, min_cost, visited, m, saved)
+            dfs(
+                n,
+                cost + 1,
+                cost_bound,
+                cheat_rem,
+                min_cost,
+                visited,
+                m,
+                saved,
+            )
         } else if cheat_rem > 0 && m[n] == '#' {
             cheat_rem = cheat_rem - 1;
-            dfs(n, cost + 1, cost_bound, cheat_rem, min_cost, visited, m, saved)
+            dfs(
+                n,
+                cost + 1,
+                cost_bound,
+                cheat_rem,
+                min_cost,
+                visited,
+                m,
+                saved,
+            )
         }
     });
     assert!(visited.remove(&pos));
