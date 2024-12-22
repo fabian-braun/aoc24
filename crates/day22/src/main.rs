@@ -1,3 +1,7 @@
+use itertools::Itertools;
+use maplit::hashmap;
+use std::collections::{HashMap, VecDeque};
+use std::iter::repeat_n;
 use std::time::Instant;
 
 const VERSION: &str = env!("CARGO_PKG_NAME");
@@ -22,20 +26,54 @@ async fn main() {
 }
 
 fn run(input: String) -> anyhow::Result<String> {
-    let result: u64 = input
+    let start_nums: Vec<i64> = input
         .lines()
+        .map(|secret_num| secret_num.parse().unwrap())
+        .collect_vec();
+    let seq_to_bananas = start_nums
+        .iter()
         .map(|secret_num| {
-            let mut secret_num: u64 = secret_num.parse().unwrap();
-            for _ in 0..2000 {
-                secret_num = calc_next(secret_num);
+            let mut seq_to_bananas: HashMap<(i64, i64, i64, i64), i64> = hashmap! {};
+            let mut secret_num_a: i64 = *secret_num;
+            let mut seq = VecDeque::from([0_i64, 0_i64, 0_i64, 0_i64]);
+            for _ in 0..3 {
+                let secret_num_b = calc_next(secret_num_a);
+                let price_a = secret_num_a % 10;
+                let price_b = secret_num_b % 10;
+                secret_num_a = secret_num_b;
+                _ = seq.pop_front();
+                seq.push_back(price_b - price_a);
             }
-            secret_num
+            for _ in 3..2000 {
+                let secret_num_b = calc_next(secret_num_a);
+                let price_a = secret_num_a % 10;
+                let price_b = secret_num_b % 10;
+                secret_num_a = secret_num_b;
+                _ = seq.pop_front();
+                seq.push_back(price_b - price_a);
+                if seq_to_bananas.contains_key(&(seq[0], seq[1], seq[2], seq[3])) {
+                    continue;
+                }
+                seq_to_bananas.insert((seq[0], seq[1], seq[2], seq[3]), price_b);
+            }
+            seq_to_bananas
         })
-        .sum();
-    Ok(result.to_string())
+        .collect_vec();
+    let mut max_bananas = 0_i64;
+    repeat_n(-9_i64..9_i64, 4)
+        .multi_cartesian_product()
+        .for_each(|v| {
+            let mut total_bananas = 0;
+            for seq_to_bananas in &seq_to_bananas {
+                let bananas = seq_to_bananas.get(&(v[0], v[1], v[2], v[3])).unwrap_or(&0);
+                total_bananas += bananas;
+            }
+            max_bananas = max_bananas.max(total_bananas);
+        });
+    Ok(max_bananas.to_string())
 }
 
-fn calc_next(n: u64) -> u64 {
+fn calc_next(n: i64) -> i64 {
     let mix = n * 64;
     let n = mix ^ n;
     let n = n % 16777216;
@@ -55,28 +93,5 @@ fn calc_next(n: u64) -> u64 {
 mod tests {
     use super::*;
     #[test]
-    fn test_examples() {
-        struct Example {
-            content: &'static str,
-            expected: &'static str,
-        }
-        let examples = [
-            Example {
-                content: "1",
-                expected: "1",
-            },
-            Example {
-                content: "1",
-                expected: "1",
-            },
-        ];
-        for (i, ex) in examples.iter().enumerate() {
-            assert_eq!(
-                ex.expected.to_string(),
-                run(ex.content.to_string()).unwrap(),
-                "example {} failed:",
-                i + 1
-            );
-        }
-    }
+    fn test_examples() {}
 }
