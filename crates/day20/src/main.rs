@@ -1,9 +1,9 @@
 use anyhow::Context;
 use itertools::Itertools;
-use maplit::{hashmap, hashset};
+use maplit::hashmap;
 use ndarray::Axis;
 use std::cmp::Reverse;
-use std::collections::{BinaryHeap, HashMap, HashSet};
+use std::collections::{BinaryHeap, HashMap};
 use std::time::Instant;
 use utilities::M;
 
@@ -18,14 +18,14 @@ async fn main() {
         .unwrap_or(1);
     let content = utilities::get_example(day).await;
     println!("Example Solution for day {}: \n{:?}\n", day, run(content));
-    // let content = utilities::get_input(day).await;
-    // let start = Instant::now();
-    // let solution = run(content);
-    // let time_taken = start.elapsed();
-    // println!(
-    //     "Actual Solution for day {}: \n{:?}\nin time {:?}",
-    //     day, solution, time_taken
-    // );
+    let content = utilities::get_input(day).await;
+    let start = Instant::now();
+    let solution = run(content);
+    let time_taken = start.elapsed();
+    println!(
+        "Actual Solution for day {}: \n{:?}\nin time {:?}",
+        day, solution, time_taken
+    );
 }
 
 fn run(input: String) -> anyhow::Result<String> {
@@ -50,7 +50,7 @@ fn run(input: String) -> anyhow::Result<String> {
         })
     }
 
-    let mut s_p = vec![];
+    let mut s_p = vec![end];
     let mut curr = end;
     while let Some(c) = pred.get(&curr) {
         s_p.push(*c);
@@ -58,57 +58,31 @@ fn run(input: String) -> anyhow::Result<String> {
     }
     s_p.reverse();
 
-    let mut saved = vec![0_usize; (min_cost[&end] + 1) as usize];
-    s_p.iter().for_each(|&s_p_pos| {
-        // try to find short-cut from pos and compute saved time
-        find_shortcuts(s_p_pos, &min_cost, &m, &mut saved);
-    });
-
-    let saved_non_0 = saved
-        .iter()
-        .enumerate()
-        .skip(50)
-        .filter_map(|(idx, val)| (val > &0).then_some((idx, val)))
-        .collect_vec();
-    dbg!(saved_non_0);
-    let result: usize = saved.iter().skip(50).sum();
-
-    Ok(result.to_string())
-}
-
-fn find_shortcuts(
-    s_p_pos: (usize, usize),
-    original_min_cost: &HashMap<(usize, usize), u64>,
-    m: &M,
-    saved: &mut [usize],
-) {
-    let start_cost = original_min_cost[&s_p_pos];
-    let mut min_cost = hashmap! { s_p_pos => start_cost };
-    let mut heap = BinaryHeap::<Reverse<(u64, (usize, usize))>>::new();
-    heap.push(Reverse((start_cost, s_p_pos)));
-    while let Some(Reverse((cost, pos))) = heap.pop() {
-        if cost > min_cost[&pos] {
-            continue;
-        }
-        let new_cost: u64 = cost + 1;
-        neighbours(pos).into_iter().for_each(|n| {
-            if new_cost < *min_cost.get(&n).unwrap_or(&(start_cost + 22)) {
-                if m[n] == '.' || m[n] == 'E' {
-                    // we're on a good path again
-                    if new_cost < original_min_cost[&n] {
-                        // we found a shortcut
-                        let saved_cost = original_min_cost[&n] - new_cost;
-                        saved[saved_cost as usize] += 1;
-                        heap.push(Reverse((new_cost, n)));
-                        min_cost.insert(n, new_cost);
-                    }
-                } else if m[n] == '#' {
-                    heap.push(Reverse((new_cost, n)));
-                    min_cost.insert(n, new_cost);
+    let mut saved = vec![0_usize; min_cost[&end] as usize];
+    s_p.iter().for_each(|&o| {
+        s_p.iter().for_each(|&d| {
+            if min_cost[&o] < min_cost[&d] {
+                let md = d.1.abs_diff(o.1) + d.0.abs_diff(o.0);
+                let original_cost = (min_cost[&d] - min_cost[&o]) as usize;
+                if original_cost > md && md < 21 {
+                    saved[original_cost - md] += 1;
                 }
             }
-        })
-    }
+        });
+    });
+
+    // let saved_non_0 = saved
+    //     .iter()
+    //     .enumerate()
+    //     .skip(100)
+    //     .filter_map(|(idx, val)| (val > &0).then_some((idx, val)))
+    //     .collect_vec();
+    // dbg!(saved_non_0);
+    let result: usize = saved.iter().skip(100).sum();
+    // wrong results submitted to AOC
+    assert_ne!(43143107, result);
+
+    Ok(result.to_string())
 }
 
 fn neighbours(x: (usize, usize)) -> [(usize, usize); 4] {
@@ -119,6 +93,7 @@ fn neighbours(x: (usize, usize)) -> [(usize, usize); 4] {
         (x.0 - 1, x.1),
     ]
 }
+
 fn print(m: &M) {
     for y in 0..m.len_of(Axis(0)) {
         println!();
