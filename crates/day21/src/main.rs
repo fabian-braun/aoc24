@@ -1,5 +1,8 @@
 use itertools::Itertools;
 use ndarray::{arr2, Axis};
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
+use std::iter::Rev;
 use std::time::Instant;
 
 const VERSION: &str = env!("CARGO_PKG_NAME");
@@ -76,13 +79,23 @@ fn run(input: String) -> anyhow::Result<String> {
 fn num_idx(c: char) -> usize {
     c.to_digit(11).unwrap() as usize
 }
-fn dir_idx(c: char) -> usize {
+const fn dir_idx(c: char) -> usize {
     match c {
         '<' => 0,
         '>' => 1,
         'v' => 2,
         '^' => 3,
         'A' => 4,
+        _ => panic!(),
+    }
+}
+fn dir_idx_rev(c: usize) -> char {
+    match c {
+        0 => '<',
+        1 => '>',
+        2 => 'v',
+        3 => '^',
+        4 => 'A',
         _ => panic!(),
     }
 }
@@ -140,6 +153,57 @@ fn compute_sequences_numeric_kp() -> Vec<Vec<Vec<char>>> {
     sequences
 }
 
+const KPN: [&[char]; 5] = [
+    &['v'],           // '<' => 0,
+    &['v', 'A'],      // '>' => 1,
+    &['<', '^', '>'], // 'v' => 2,
+    &['v', 'A'],      // '^' => 3,
+    &['^', '>'],      // 'A' => 4,
+];
+
+fn compute_distance_directional_kp() -> Vec<Vec<usize>> {
+    let m = arr2(&[['X', '^', 'A'], ['<', 'v', '>']]);
+    let mut cost: Vec<Vec<usize>> = vec![vec![1_usize; 5]; 5];
+    let mut cost_n: Vec<Vec<usize>> = vec![vec![1_usize; 5]; 5];
+    for _ in 0..3 {
+        for y_org in 0..m.len_of(Axis(0)) {
+            for x_org in 0..m.len_of(Axis(1)) {
+                for y_dst in 0..m.len_of(Axis(0)) {
+                    for x_dst in 0..m.len_of(Axis(1)) {
+                        let org = m[(y_org, x_org)];
+                        let dst = m[(y_dst, x_dst)];
+                        if org == 'X' || dst == 'X' {
+                            continue;
+                        }
+                        let mut min_cost = vec![usize::MAX; 5];
+                        min_cost[dir_idx(org)] = 0;
+                        let mut heap = BinaryHeap::new();
+                        heap.push(Reverse((0, org)));
+                        while let Some(Reverse((c, pos))) = heap.pop() {
+                            if c > min_cost[dir_idx(pos)] {
+                                continue;
+                            }
+                            for n in KPN[dir_idx(pos)] {
+                                let new_cost = c + cost[dir_idx(pos)][dir_idx(*n)];
+                                if new_cost < min_cost[dir_idx(*n)] {
+                                    heap.push(Reverse((new_cost, *n)));
+                                }
+                            }
+                        }
+
+                        let orig = dir_idx(org);
+                        let dest = dir_idx(dst);
+                        cost_n[orig][dest] = 3;
+                    }
+                }
+            }
+        }
+        cost = cost_n;
+        cost_n = vec![vec![1_usize; 5]; 5];
+    }
+    cost
+}
+
 fn compute_sequences_directional_kp() -> Vec<Vec<Vec<char>>> {
     let m = arr2(&[['X', '^', 'A'], ['<', 'v', '>']]);
     let mut sequences: Vec<Vec<Vec<char>>> = vec![vec![vec![]; 5]; 5];
@@ -188,6 +252,62 @@ fn compute_sequences_directional_kp() -> Vec<Vec<Vec<char>>> {
     sequences
 }
 
+fn hardcode_sequences_directional_kp() -> Vec<Vec<Vec<char>>> {
+    let mut sequences: Vec<Vec<Vec<char>>> = vec![vec![vec![]; 5]; 5];
+    sequences[dir_idx('A')][dir_idx('A')] = vec!['A'];
+    sequences[dir_idx('A')][dir_idx('^')] = vec!['<', 'A'];
+    sequences[dir_idx('A')][dir_idx('<')] = vec!['v', '<', '<', 'A'];
+    sequences[dir_idx('A')][dir_idx('v')] = vec!['<', 'v', 'A'];
+    sequences[dir_idx('A')][dir_idx('>')] = vec!['v', 'A'];
+    sequences[dir_idx('^')][dir_idx('A')] = vec!['>', 'A'];
+    sequences[dir_idx('^')][dir_idx('^')] = vec!['A'];
+    sequences[dir_idx('^')][dir_idx('<')] = vec![];
+    sequences[dir_idx('^')][dir_idx('v')] = vec!['v', 'A'];
+    sequences[dir_idx('^')][dir_idx('>')] = vec![];
+    sequences[dir_idx('<')][dir_idx('A')] = vec![];
+    sequences[dir_idx('<')][dir_idx('^')] = vec![];
+    sequences[dir_idx('<')][dir_idx('<')] = vec!['A'];
+    sequences[dir_idx('<')][dir_idx('v')] = vec!['>', 'A'];
+    sequences[dir_idx('<')][dir_idx('>')] = vec!['>', '>', 'A'];
+    sequences[dir_idx('v')][dir_idx('A')] = vec![];
+    sequences[dir_idx('v')][dir_idx('^')] = vec!['^', 'A'];
+    sequences[dir_idx('v')][dir_idx('<')] = vec!['<', 'A'];
+    sequences[dir_idx('v')][dir_idx('v')] = vec!['A'];
+    sequences[dir_idx('v')][dir_idx('>')] = vec!['>', 'A'];
+    sequences[dir_idx('>')][dir_idx('A')] = vec!['^', 'A'];
+    sequences[dir_idx('>')][dir_idx('^')] = vec![];
+    sequences[dir_idx('>')][dir_idx('<')] = vec!['<', '<', 'A'];
+    sequences[dir_idx('>')][dir_idx('v')] = vec!['<', 'A'];
+    sequences[dir_idx('>')][dir_idx('>')] = vec!['A'];
+    for seqs in sequences {
+        for seq in seqs {
+            if seq.len() > 2 {
+                // find the best ordering of the sequence
+                seq[0..seq.len() - 1]
+                    .iter()
+                    .permutations(seq.len())
+                    .for_each(|mut seq| {
+                        seq.push(&'A');
+                        let seq_n = seq
+                            .iter()
+                            .tuple_windows()
+                            .map(|(a, b)| sequences[a][b])
+                            .flatten()
+                            .collect_vec();
+                        let seq_nn = seq_n
+                            .iter()
+                            .tuple_windows()
+                            .map(|(a, b)| sequences[a][b])
+                            .flatten()
+                            .collect_vec();
+                    });
+            }
+        }
+    }
+
+    sequences
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -211,5 +331,14 @@ mod tests {
         assert_eq!(&vec!['<', 'A'], &lookup[dir_idx('A')][dir_idx('^')]);
         assert_eq!(&vec!['v', '<', 'A'], &lookup[dir_idx('^')][dir_idx('<')]);
         assert_eq!(&vec!['>', '^', 'A'], &lookup[dir_idx('<')][dir_idx('^')]);
+    }
+
+
+    #[test]
+    fn test_compute_distance_directional_kp() {
+        let lookup = compute_distance_directional_kp();
+        for c in ['A', '<', '^', '>', 'v'] {
+            assert_eq!(&0usize, &lookup[dir_idx(c)][dir_idx(c)]);
+        }
     }
 }
