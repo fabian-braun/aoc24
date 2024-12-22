@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use ndarray::{arr2, Axis};
-use std::cmp::Reverse;
+use std::cmp::{min, Reverse};
 use std::collections::BinaryHeap;
 use std::iter::Rev;
 use std::time::Instant;
@@ -161,14 +161,12 @@ const KPN: [&[char]; 5] = [
     &['^', '>'],      // 'A' => 4,
 ];
 
-fn compute_distance_directional_kp() -> Vec<Vec<usize>> {
+fn compute_distance_directional_kp(depth: usize) -> Vec<Vec<usize>> {
     let m = arr2(&[['X', '^', 'A'], ['<', 'v', '>']]);
     let mut cost: Vec<Vec<usize>> = vec![vec![1_usize; 5]; 5];
     let mut cost_n: Vec<Vec<usize>> = vec![vec![1_usize; 5]; 5];
-    for _ in 0..2 {
-        println!("0");
+    for _ in 0..depth {
         for y_org in 0..m.len_of(Axis(0)) {
-            println!("1");
             for x_org in 0..m.len_of(Axis(1)) {
                 for y_dst in 0..m.len_of(Axis(0)) {
                     for x_dst in 0..m.len_of(Axis(1)) {
@@ -182,13 +180,19 @@ fn compute_distance_directional_kp() -> Vec<Vec<usize>> {
                         let mut heap = BinaryHeap::new();
                         heap.push(Reverse((0, org)));
                         while let Some(Reverse((c, pos))) = heap.pop() {
+                            if pos == dst {
+                                break;
+                            }
                             if c > min_cost[dir_idx(pos)] {
                                 continue;
                             }
                             for n in KPN[dir_idx(pos)] {
-                                let new_cost = c + cost[dir_idx(pos)][dir_idx(*n)];
+                                let new_cost = c
+                                    + cost[dir_idx(pos)][dir_idx(*n)]
+                                    + cost[dir_idx(*n)][dir_idx('A')];
                                 if new_cost < min_cost[dir_idx(*n)] {
                                     heap.push(Reverse((new_cost, *n)));
+                                    min_cost[dir_idx(*n)] = new_cost;
                                 }
                             }
                         }
@@ -201,6 +205,7 @@ fn compute_distance_directional_kp() -> Vec<Vec<usize>> {
             }
         }
         cost = cost_n;
+        println!("{cost:?}");
         cost_n = vec![vec![1_usize; 5]; 5];
     }
     cost
@@ -281,9 +286,13 @@ mod tests {
 
     #[test]
     fn test_compute_distance_directional_kp() {
-        let lookup = compute_distance_directional_kp();
+        let lookup = compute_distance_directional_kp(1);
         for c in ['A', '<', '^', '>', 'v'] {
-            assert_eq!(&0usize, &lookup[dir_idx(c)][dir_idx(c)]);
+            assert_eq!(0, lookup[dir_idx(c)][dir_idx(c)]);
         }
+        assert_eq!(2, lookup[dir_idx('A')][dir_idx('>')]);
+        assert_eq!(2, lookup[dir_idx('A')][dir_idx('^')]);
+        assert_eq!(4, lookup[dir_idx('A')][dir_idx('v')]);
+        assert_eq!(6, lookup[dir_idx('A')][dir_idx('<')]);
     }
 }
