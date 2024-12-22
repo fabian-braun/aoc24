@@ -106,34 +106,30 @@ fn compute_sequences_numeric_kp() -> Vec<Vec<Vec<char>>> {
                     let dest = num_idx(m[(y_dst, x_dst)]);
                     let mut dy: isize = y_dst as isize - y_org as isize;
                     let mut dx: isize = x_dst as isize - x_org as isize;
-                    // first go up to not hit X
-                    if y_org == 3 {
-                        while dy < 0 {
-                            sequences[orig][dest].push('^');
-                            dy += 1;
-                        }
-                    }
-                    if x_org == 0 {
-                        while dx > 0 {
-                            sequences[orig][dest].push('>');
-                            dx -= 1;
-                        }
-                    }
+                    let mut v = vec![];
+                    let mut h = vec![];
                     while dy > 0 {
-                        sequences[orig][dest].push('v');
+                        v.push('v');
                         dy -= 1;
                     }
                     while dx < 0 {
-                        sequences[orig][dest].push('<');
+                        h.push('<');
                         dx += 1;
                     }
                     while dy < 0 {
-                        sequences[orig][dest].push('^');
+                        v.push('^');
                         dy += 1;
                     }
                     while dx > 0 {
-                        sequences[orig][dest].push('>');
+                        h.push('>');
                         dx -= 1;
+                    }
+                    if x_org == 0 && x_dst != 0 {
+                        sequences[orig][dest].extend(h);
+                        sequences[orig][dest].extend(v);
+                    } else {
+                        sequences[orig][dest].extend(v);
+                        sequences[orig][dest].extend(h);
                     }
                     sequences[orig][dest].push('A');
                 }
@@ -158,22 +154,30 @@ fn compute_sequences_directional_kp() -> Vec<Vec<Vec<char>>> {
                     let dest = dir_idx(m[(y_dst, x_dst)]);
                     let mut dy: isize = y_dst as isize - y_org as isize;
                     let mut dx: isize = x_dst as isize - x_org as isize;
-                    // first go down and right to not hit X
+                    let mut v = vec![];
+                    let mut h = vec![];
                     while dx > 0 {
-                        sequences[orig][dest].push('>');
+                        h.push('>');
                         dx -= 1;
                     }
                     while dy > 0 {
-                        sequences[orig][dest].push('v');
+                        v.push('v');
                         dy -= 1;
                     }
                     while dy < 0 {
-                        sequences[orig][dest].push('^');
+                        v.push('^');
                         dy += 1;
                     }
                     while dx < 0 {
-                        sequences[orig][dest].push('<');
+                        h.push('<');
                         dx += 1;
+                    }
+                    if y_org == 0 && y_dst != 0 {
+                        sequences[orig][dest].extend(v);
+                        sequences[orig][dest].extend(h);
+                    } else {
+                        sequences[orig][dest].extend(h);
+                        sequences[orig][dest].extend(v);
                     }
                     sequences[orig][dest].push('A');
                 }
@@ -187,31 +191,6 @@ fn compute_sequences_directional_kp() -> Vec<Vec<Vec<char>>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn test_examples() {
-        struct Example {
-            content: &'static str,
-            expected: &'static str,
-        }
-        let examples = [
-            Example {
-                content: "1",
-                expected: "1",
-            },
-            Example {
-                content: "1",
-                expected: "1",
-            },
-        ];
-        for (i, ex) in examples.iter().enumerate() {
-            assert_eq!(
-                ex.expected.to_string(),
-                run(ex.content.to_string()).unwrap(),
-                "example {} failed:",
-                i + 1
-            );
-        }
-    }
     #[test]
     fn test_numeric_kp() {
         let lookup = compute_sequences_numeric_kp();
