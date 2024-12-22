@@ -1,4 +1,5 @@
 use anyhow::Context;
+use itertools::Itertools;
 use maplit::{hashmap, hashset};
 use ndarray::Axis;
 use std::cmp::Reverse;
@@ -63,7 +64,13 @@ fn run(input: String) -> anyhow::Result<String> {
         find_shortcuts(s_p_pos, &min_cost, &m, &mut saved);
     });
 
-    dbg!(&saved[50..]);
+    let saved_non_0 = saved
+        .iter()
+        .enumerate()
+        .skip(50)
+        .filter_map(|(idx, val)| (val > &0).then_some((idx, val)))
+        .collect_vec();
+    dbg!(saved_non_0);
     let result: usize = saved.iter().skip(50).sum();
 
     Ok(result.to_string())
@@ -80,18 +87,19 @@ fn find_shortcuts(
     let mut heap = BinaryHeap::<Reverse<(u64, (usize, usize))>>::new();
     heap.push(Reverse((start_cost, s_p_pos)));
     while let Some(Reverse((cost, pos))) = heap.pop() {
-        if cost > min_cost[&pos] || cost > start_cost + 20 {
+        if cost > min_cost[&pos] {
             continue;
         }
         let new_cost: u64 = cost + 1;
         neighbours(pos).into_iter().for_each(|n| {
-            if new_cost < *min_cost.get(&n).unwrap_or(&u64::MAX) {
+            if new_cost < *min_cost.get(&n).unwrap_or(&(start_cost + 22)) {
                 if m[n] == '.' || m[n] == 'E' {
                     // we're on a good path again
                     if new_cost < original_min_cost[&n] {
                         // we found a shortcut
                         let saved_cost = original_min_cost[&n] - new_cost;
                         saved[saved_cost as usize] += 1;
+                        heap.push(Reverse((new_cost, n)));
                         min_cost.insert(n, new_cost);
                     }
                 } else if m[n] == '#' {
