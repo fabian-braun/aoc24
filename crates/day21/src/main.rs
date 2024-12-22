@@ -165,8 +165,10 @@ fn compute_distance_directional_kp() -> Vec<Vec<usize>> {
     let m = arr2(&[['X', '^', 'A'], ['<', 'v', '>']]);
     let mut cost: Vec<Vec<usize>> = vec![vec![1_usize; 5]; 5];
     let mut cost_n: Vec<Vec<usize>> = vec![vec![1_usize; 5]; 5];
-    for _ in 0..3 {
+    for _ in 0..2 {
+        println!("0");
         for y_org in 0..m.len_of(Axis(0)) {
+            println!("1");
             for x_org in 0..m.len_of(Axis(1)) {
                 for y_dst in 0..m.len_of(Axis(0)) {
                     for x_dst in 0..m.len_of(Axis(1)) {
@@ -193,7 +195,7 @@ fn compute_distance_directional_kp() -> Vec<Vec<usize>> {
 
                         let orig = dir_idx(org);
                         let dest = dir_idx(dst);
-                        cost_n[orig][dest] = 3;
+                        cost_n[orig][dest] = min_cost[dir_idx(dst)];
                     }
                 }
             }
@@ -252,62 +254,6 @@ fn compute_sequences_directional_kp() -> Vec<Vec<Vec<char>>> {
     sequences
 }
 
-fn hardcode_sequences_directional_kp() -> Vec<Vec<Vec<char>>> {
-    let mut sequences: Vec<Vec<Vec<char>>> = vec![vec![vec![]; 5]; 5];
-    sequences[dir_idx('A')][dir_idx('A')] = vec!['A'];
-    sequences[dir_idx('A')][dir_idx('^')] = vec!['<', 'A'];
-    sequences[dir_idx('A')][dir_idx('<')] = vec!['v', '<', '<', 'A'];
-    sequences[dir_idx('A')][dir_idx('v')] = vec!['<', 'v', 'A'];
-    sequences[dir_idx('A')][dir_idx('>')] = vec!['v', 'A'];
-    sequences[dir_idx('^')][dir_idx('A')] = vec!['>', 'A'];
-    sequences[dir_idx('^')][dir_idx('^')] = vec!['A'];
-    sequences[dir_idx('^')][dir_idx('<')] = vec![];
-    sequences[dir_idx('^')][dir_idx('v')] = vec!['v', 'A'];
-    sequences[dir_idx('^')][dir_idx('>')] = vec![];
-    sequences[dir_idx('<')][dir_idx('A')] = vec![];
-    sequences[dir_idx('<')][dir_idx('^')] = vec![];
-    sequences[dir_idx('<')][dir_idx('<')] = vec!['A'];
-    sequences[dir_idx('<')][dir_idx('v')] = vec!['>', 'A'];
-    sequences[dir_idx('<')][dir_idx('>')] = vec!['>', '>', 'A'];
-    sequences[dir_idx('v')][dir_idx('A')] = vec![];
-    sequences[dir_idx('v')][dir_idx('^')] = vec!['^', 'A'];
-    sequences[dir_idx('v')][dir_idx('<')] = vec!['<', 'A'];
-    sequences[dir_idx('v')][dir_idx('v')] = vec!['A'];
-    sequences[dir_idx('v')][dir_idx('>')] = vec!['>', 'A'];
-    sequences[dir_idx('>')][dir_idx('A')] = vec!['^', 'A'];
-    sequences[dir_idx('>')][dir_idx('^')] = vec![];
-    sequences[dir_idx('>')][dir_idx('<')] = vec!['<', '<', 'A'];
-    sequences[dir_idx('>')][dir_idx('v')] = vec!['<', 'A'];
-    sequences[dir_idx('>')][dir_idx('>')] = vec!['A'];
-    for seqs in sequences {
-        for seq in seqs {
-            if seq.len() > 2 {
-                // find the best ordering of the sequence
-                seq[0..seq.len() - 1]
-                    .iter()
-                    .permutations(seq.len())
-                    .for_each(|mut seq| {
-                        seq.push(&'A');
-                        let seq_n = seq
-                            .iter()
-                            .tuple_windows()
-                            .map(|(a, b)| sequences[a][b])
-                            .flatten()
-                            .collect_vec();
-                        let seq_nn = seq_n
-                            .iter()
-                            .tuple_windows()
-                            .map(|(a, b)| sequences[a][b])
-                            .flatten()
-                            .collect_vec();
-                    });
-            }
-        }
-    }
-
-    sequences
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -332,7 +278,6 @@ mod tests {
         assert_eq!(&vec!['v', '<', 'A'], &lookup[dir_idx('^')][dir_idx('<')]);
         assert_eq!(&vec!['>', '^', 'A'], &lookup[dir_idx('<')][dir_idx('^')]);
     }
-
 
     #[test]
     fn test_compute_distance_directional_kp() {
