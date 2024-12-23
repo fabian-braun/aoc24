@@ -1,6 +1,4 @@
 use itertools::Itertools;
-use maplit::hashset;
-use std::collections::HashSet;
 use std::time::Instant;
 use utilities::B;
 
@@ -28,45 +26,46 @@ async fn main() {
 }
 
 fn run(input: String) -> anyhow::Result<String> {
-    let mut nodes_s: Vec<String> = vec![];
+    let mut nodes: Vec<String> = vec![];
     let mut edges: Vec<(usize, usize)> = vec![];
     input.lines().filter(|l| !l.is_empty()).for_each(|line| {
         let (a, b) = line.split_once('-').unwrap();
-        let mut a_idx = nodes_s.iter().position(|x| x == a);
+        let mut a_idx = nodes.iter().position(|x| x == a);
         if a_idx.is_none() {
-            a_idx = Some(nodes_s.len());
-            nodes_s.push(a.to_string());
+            a_idx = Some(nodes.len());
+            nodes.push(a.to_string());
         }
-        let mut b_idx = nodes_s.iter().position(|x| x == b);
+        let mut b_idx = nodes.iter().position(|x| x == b);
         if b_idx.is_none() {
-            b_idx = Some(nodes_s.len());
-            nodes_s.push(b.to_string());
+            b_idx = Some(nodes.len());
+            nodes.push(b.to_string());
         }
         if !edges.contains(&(a_idx.unwrap(), b_idx.unwrap())) {
             edges.push((a_idx.unwrap(), b_idx.unwrap()));
         }
     });
-    let mut m = B::default((nodes_s.len(), nodes_s.len()));
+    let mut m = B::default((nodes.len(), nodes.len()));
     for (a, b) in &edges {
         m[(*a, *b)] = true;
         m[(*b, *a)] = true;
     }
-    let subgraphs = (0..nodes_s.len()).collect_vec();
+    let subgraphs = (0..nodes.len()).collect_vec();
     let mut subgraphs_2: Vec<Vec<bool>> = vec![];
     for (a, b) in subgraphs.iter().tuple_combinations() {
         if m[(*a, *b)] {
-            let mut x = vec![false; nodes_s.len()];
+            let mut x = vec![false; nodes.len()];
             x[*a] = true;
             x[*b] = true;
             subgraphs_2.push(x);
         }
     }
+    dbg!(nodes.len());
     let mut subgraphs_prev = subgraphs_2;
-    for i in 3..100 {
+    loop {
         dbg!(subgraphs_prev.len());
         let mut subgraphs_next: Vec<Vec<bool>> = vec![];
         for a in subgraphs_prev.iter() {
-            for b in 0..nodes_s.len() {
+            for b in 0..nodes.len() {
                 if a.iter()
                     .enumerate()
                     .filter(|(_ax, is_in)| **is_in)
@@ -95,7 +94,7 @@ fn run(input: String) -> anyhow::Result<String> {
         .enumerate()
         .filter_map(|(n_idx, is_in)| {
             if is_in {
-                Some(nodes_s[n_idx].clone())
+                Some(nodes[n_idx].clone())
             } else {
                 None
             }
