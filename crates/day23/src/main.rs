@@ -65,7 +65,9 @@ fn run(input: String) -> anyhow::Result<String> {
         dbg!(subgraphs_prev.len());
         let mut subgraphs_next: Vec<Vec<bool>> = vec![];
         for a in subgraphs_prev.iter() {
-            for b in 0..nodes.len() {
+            for b in (a.len() - a.iter().rev().position(|(is_in)| *is_in).unwrap_or(a.len()))
+                ..nodes.len()
+            {
                 if a.iter()
                     .enumerate()
                     .filter(|(_ax, is_in)| **is_in)
@@ -74,9 +76,7 @@ fn run(input: String) -> anyhow::Result<String> {
                     let mut merged = a.clone();
                     assert!(!merged[b]);
                     merged[b] = true;
-                    if !subgraphs_next.iter().contains(&merged) {
-                        subgraphs_next.push(merged);
-                    }
+                    subgraphs_next.push(merged);
                 }
             }
         }
