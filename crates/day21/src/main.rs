@@ -67,7 +67,7 @@ const fn dix(c: char) -> usize {
     }
 }
 
-fn dix_r(c: usize) -> char {
+fn _dix_r(c: usize) -> char {
     match c {
         0 => '<',
         1 => '>',
@@ -143,7 +143,6 @@ fn compute_distance_directional_kp(depth: usize) -> Vec<Vec<usize>> {
             }
         }
         cost = cost_n;
-        println!("{cost:?}");
         cost_n = vec![vec![1_usize; 5]; 5];
     }
     cost
@@ -156,14 +155,15 @@ fn compute_distance_numeric_kp(cost_d: &[Vec<usize>]) -> Vec<Vec<usize>> {
         ['1', '2', '3'],
         ['X', '0', 'A'],
     ]);
-    let mut cost_n: Vec<Vec<usize>> = vec![vec![usize::MAX; 11]; 11];
+    // we need to press the number at the end, so that's 1 key press
+    let mut cost_n: Vec<Vec<usize>> = vec![vec![1_usize; 11]; 11];
 
-    for origin in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A'] {
-        for (d, n) in NKN[nix(origin)] {
-            let new_cost = cost_d[dix('A')][dix(*d)] + cost_d[dix(*d)][dix('A')];
-            cost_n[nix(origin)][nix(*n)] = new_cost;
-        }
-    }
+    // for origin in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A'] {
+    //     for (d, n) in NKN[nix(origin)] {
+    //         let new_cost = cost_d[dix('A')][dix(*d)] + cost_d[dix(*d)][dix('A')];
+    //         cost_n[nix(origin)][nix(*n)] = new_cost;
+    //     }
+    // }
     for y_org in 0..m.len_of(Axis(0)) {
         for x_org in 0..m.len_of(Axis(1)) {
             for y_dst in 0..m.len_of(Axis(0)) {
@@ -184,8 +184,8 @@ fn compute_distance_numeric_kp(cost_d: &[Vec<usize>]) -> Vec<Vec<usize>> {
                         if c > min_cost[nix(pos)] {
                             continue;
                         }
-                        for (_d, n) in NKN[nix(pos)] {
-                            let new_cost = c + cost_n[nix(pos)][nix(*n)];
+                        for (d, n) in NKN[nix(pos)] {
+                            let new_cost = cost_d[dix('A')][dix(*d)] + cost_d[dix(*d)][dix('A')];
                             if new_cost < min_cost[nix(*n)] {
                                 heap.push(Reverse((new_cost, *n)));
                                 min_cost[nix(*n)] = new_cost;
@@ -208,13 +208,25 @@ mod tests {
     use super::*;
     #[test]
     fn test_numeric_kp() {
-        let lookup = compute_distance_directional_kp(0);
+        let lookup = compute_distance_directional_kp(1);
         let lookup = compute_distance_numeric_kp(&lookup);
         for c in ['A', '1', '4', '7', '9'] {
             assert_eq!(0, lookup[nix(c)][nix(c)]);
         }
-        assert_eq!(2, lookup[nix('0')][nix('2')]);
+        assert_eq!(4, lookup[nix('0')][nix('2')]);
         assert_eq!(4, lookup[nix('0')][nix('8')]);
+    }
+
+    #[test]
+    fn test_compute_distance_directional_kp_0() {
+        let lookup = compute_distance_directional_kp(0);
+        for c in ['A', '<', '^', '>', 'v'] {
+            assert_eq!(1, lookup[dix(c)][dix(c)]);
+        }
+        assert_eq!(1, lookup[dix('A')][dix('>')]);
+        assert_eq!(1, lookup[dix('A')][dix('^')]);
+        assert_eq!(1, lookup[dix('A')][dix('v')]);
+        assert_eq!(1, lookup[dix('A')][dix('<')]);
     }
 
     #[test]
