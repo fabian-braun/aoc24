@@ -72,10 +72,11 @@ fn run(input: String) -> anyhow::Result<String> {
                     .all(|(ax, _is_in)| m[(ax, b)])
                 {
                     let mut merged = a.clone();
+                    assert!(!merged[b]);
                     merged[b] = true;
-                    // if !subgraphs_next.iter().contains(&merged) {
-                    subgraphs_next.push(merged);
-                    // }
+                    if !subgraphs_next.iter().contains(&merged) {
+                        subgraphs_next.push(merged);
+                    }
                 }
             }
         }
