@@ -43,7 +43,7 @@ fn run(input: String) -> anyhow::Result<String> {
             chars.insert(0, 'A');
             let mut next_chars: Vec<char> = vec![];
             chars.into_iter().tuple_windows().for_each(|(c1, c2)| {
-                next_chars.extend(num_lookup[num_idx(c1)][num_idx(c2)].iter());
+                next_chars.extend(num_lookup[nix(c1)][nix(c2)].iter());
             });
             println!("robot 1 {:?}", next_chars.iter().join(""));
             next_chars.insert(0, 'A');
@@ -76,7 +76,7 @@ fn run(input: String) -> anyhow::Result<String> {
     Ok(result.to_string())
 }
 
-fn num_idx(c: char) -> usize {
+fn nix(c: char) -> usize {
     c.to_digit(11).unwrap() as usize
 }
 const fn dix(c: char) -> usize {
@@ -89,7 +89,8 @@ const fn dix(c: char) -> usize {
         _ => panic!(),
     }
 }
-fn dir_idx_rev(c: usize) -> char {
+
+fn dix_r(c: usize) -> char {
     match c {
         0 => '<',
         1 => '>',
@@ -100,65 +101,26 @@ fn dir_idx_rev(c: usize) -> char {
     }
 }
 
-fn compute_sequences_numeric_kp() -> Vec<Vec<Vec<char>>> {
-    let m = arr2(&[
-        ['7', '8', '9'],
-        ['4', '5', '6'],
-        ['1', '2', '3'],
-        ['X', '0', 'A'],
-    ]);
-    let mut sequences: Vec<Vec<Vec<char>>> = vec![vec![vec![]; 11]; 11];
-    for y_org in 0..m.len_of(Axis(0)) {
-        for x_org in 0..m.len_of(Axis(1)) {
-            for y_dst in 0..m.len_of(Axis(0)) {
-                for x_dst in 0..m.len_of(Axis(1)) {
-                    if m[(y_org, x_org)] == 'X' || m[(y_dst, x_dst)] == 'X' {
-                        continue;
-                    }
-                    let orig = num_idx(m[(y_org, x_org)]);
-                    let dest = num_idx(m[(y_dst, x_dst)]);
-                    let mut dy: isize = y_dst as isize - y_org as isize;
-                    let mut dx: isize = x_dst as isize - x_org as isize;
-                    let mut v = vec![];
-                    let mut h = vec![];
-                    while dy > 0 {
-                        v.push('v');
-                        dy -= 1;
-                    }
-                    while dx < 0 {
-                        h.push('<');
-                        dx += 1;
-                    }
-                    while dy < 0 {
-                        v.push('^');
-                        dy += 1;
-                    }
-                    while dx > 0 {
-                        h.push('>');
-                        dx -= 1;
-                    }
-                    if x_org == 0 && x_dst != 0 {
-                        sequences[orig][dest].extend(h);
-                        sequences[orig][dest].extend(v);
-                    } else {
-                        sequences[orig][dest].extend(v);
-                        sequences[orig][dest].extend(h);
-                    }
-                    sequences[orig][dest].push('A');
-                }
-            }
-        }
-    }
-
-    sequences
-}
-
-const KPN: [&[char]; 5] = [
+const DKN: [&[char]; 5] = [
     &['v'],           // '<' => 0,
     &['v', 'A'],      // '>' => 1,
     &['<', '^', '>'], // 'v' => 2,
     &['v', 'A'],      // '^' => 3,
     &['^', '>'],      // 'A' => 4,
+];
+
+const NKN: [&[char]; 11] = [
+    &['2', 'A'],           // '0'
+    &['2', '4'],           // '1'
+    &['1', '0', '3', '5'], // '2'
+    &['A', '2', '6'],      // '3'
+    &['1', '5', '7'],      // '4'
+    &['2', '4', '6', '8'], // '5'
+    &['3', '5', '9'],      // '6'
+    &['4', '8'],           // '7'
+    &['5', '7', '9'],      // '8'
+    &['6', '8'],           // '9'
+    &['0', '3'],           // 'A'
 ];
 
 fn compute_distance_directional_kp(depth: usize) -> Vec<Vec<usize>> {
@@ -186,10 +148,9 @@ fn compute_distance_directional_kp(depth: usize) -> Vec<Vec<usize>> {
                             if c > min_cost[dix(pos)] {
                                 continue;
                             }
-                            for n in KPN[dix(pos)] {
-                                let new_cost = c
-                                    + cost[dix(pos)][dix(*n)]
-                                    + cost[dix(*n)][dix('A')];
+                            for n in DKN[dix(pos)] {
+                                let new_cost =
+                                    c + cost[dix(pos)][dix(*n)] + cost[dix(*n)][dix('A')];
                                 if new_cost < min_cost[dix(*n)] {
                                     heap.push(Reverse((new_cost, *n)));
                                     min_cost[dix(*n)] = new_cost;
@@ -211,52 +172,52 @@ fn compute_distance_directional_kp(depth: usize) -> Vec<Vec<usize>> {
     cost
 }
 
-fn compute_sequences_directional_kp() -> Vec<Vec<Vec<char>>> {
-    let m = arr2(&[['X', '^', 'A'], ['<', 'v', '>']]);
-    let mut sequences: Vec<Vec<Vec<char>>> = vec![vec![vec![]; 5]; 5];
+fn compute_distance_numeric_kp(cost: &[Vec<usize>]) -> Vec<Vec<usize>> {
+    let m = arr2(&[
+        ['7', '8', '9'],
+        ['4', '5', '6'],
+        ['1', '2', '3'],
+        ['X', '0', 'A'],
+    ]);
+    let mut cost_n: Vec<Vec<usize>> = vec![vec![1_usize; 11]; 11];
     for y_org in 0..m.len_of(Axis(0)) {
         for x_org in 0..m.len_of(Axis(1)) {
             for y_dst in 0..m.len_of(Axis(0)) {
                 for x_dst in 0..m.len_of(Axis(1)) {
-                    if m[(y_org, x_org)] == 'X' || m[(y_dst, x_dst)] == 'X' {
+                    let org = m[(y_org, x_org)];
+                    let dst = m[(y_dst, x_dst)];
+                    if org == 'X' || dst == 'X' {
                         continue;
                     }
-                    let orig = dix(m[(y_org, x_org)]);
-                    let dest = dix(m[(y_dst, x_dst)]);
-                    let mut dy: isize = y_dst as isize - y_org as isize;
-                    let mut dx: isize = x_dst as isize - x_org as isize;
-                    let mut v = vec![];
-                    let mut h = vec![];
-                    while dx > 0 {
-                        h.push('>');
-                        dx -= 1;
+                    let mut min_cost = vec![usize::MAX; 5];
+                    min_cost[dix(org)] = 0;
+                    let mut heap = BinaryHeap::new();
+                    heap.push(Reverse((0, org)));
+                    while let Some(Reverse((c, pos))) = heap.pop() {
+                        if pos == dst {
+                            break;
+                        }
+                        if c > min_cost[dix(pos)] {
+                            continue;
+                        }
+                        for n in DKN[dix(pos)] {
+                            let new_cost = c + cost[dix(pos)][dix(*n)] + cost[dix(*n)][dix('A')];
+                            if new_cost < min_cost[dix(*n)] {
+                                heap.push(Reverse((new_cost, *n)));
+                                min_cost[dix(*n)] = new_cost;
+                            }
+                        }
                     }
-                    while dy > 0 {
-                        v.push('v');
-                        dy -= 1;
-                    }
-                    while dy < 0 {
-                        v.push('^');
-                        dy += 1;
-                    }
-                    while dx < 0 {
-                        h.push('<');
-                        dx += 1;
-                    }
-                    if y_org == 0 && y_dst != 0 {
-                        sequences[orig][dest].extend(v);
-                        sequences[orig][dest].extend(h);
-                    } else {
-                        sequences[orig][dest].extend(h);
-                        sequences[orig][dest].extend(v);
-                    }
-                    sequences[orig][dest].push('A');
+
+                    let orig = dix(org);
+                    let dest = dix(dst);
+                    cost_n[orig][dest] = min_cost[dix(dst)];
                 }
             }
         }
     }
-
-    sequences
+    println!("{cost:?}");
+    cost_n
 }
 
 #[cfg(test)]
@@ -266,26 +227,15 @@ mod tests {
     fn test_numeric_kp() {
         let lookup = compute_sequences_numeric_kp();
         for c in ['A', '1', '4', '7', '9'] {
-            assert_eq!(&vec!['A'], &lookup[num_idx(c)][num_idx(c)]);
+            assert_eq!(&vec!['A'], &lookup[nix(c)][nix(c)]);
         }
-        assert_eq!(&vec!['<', 'A'], &lookup[num_idx('A')][num_idx('0')]);
-        assert_eq!(&vec!['^', '<', 'A'], &lookup[num_idx('A')][num_idx('2')]);
-        assert_eq!(&vec!['>', 'v', 'A'], &lookup[num_idx('7')][num_idx('5')]);
+        assert_eq!(&vec!['<', 'A'], &lookup[nix('A')][nix('0')]);
+        assert_eq!(&vec!['^', '<', 'A'], &lookup[nix('A')][nix('2')]);
+        assert_eq!(&vec!['>', 'v', 'A'], &lookup[nix('7')][nix('5')]);
     }
 
     #[test]
-    fn test_directional_kp() {
-        let lookup = compute_sequences_directional_kp();
-        for c in ['A', '<', '^', '>', 'v'] {
-            assert_eq!(&vec!['A'], &lookup[dix(c)][dix(c)]);
-        }
-        assert_eq!(&vec!['<', 'A'], &lookup[dix('A')][dix('^')]);
-        assert_eq!(&vec!['v', '<', 'A'], &lookup[dix('^')][dix('<')]);
-        assert_eq!(&vec!['>', '^', 'A'], &lookup[dix('<')][dix('^')]);
-    }
-
-    #[test]
-    fn test_compute_distance_directional_kp() {
+    fn test_compute_distance_directional_kp_1() {
         let lookup = compute_distance_directional_kp(1);
         for c in ['A', '<', '^', '>', 'v'] {
             assert_eq!(0, lookup[dix(c)][dix(c)]);
@@ -294,5 +244,14 @@ mod tests {
         assert_eq!(2, lookup[dix('A')][dix('^')]);
         assert_eq!(4, lookup[dix('A')][dix('v')]);
         assert_eq!(6, lookup[dix('A')][dix('<')]);
+    }
+
+    #[test]
+    fn test_compute_distance_directional_kp_2() {
+        let lookup = compute_distance_directional_kp(2);
+        for c in ['A', '<', '^', '>', 'v'] {
+            assert_eq!(0, lookup[dix(c)][dix(c)]);
+        }
+        assert_eq!(10, lookup[dix('A')][dix('v')]);
     }
 }
