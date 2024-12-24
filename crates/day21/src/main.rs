@@ -208,13 +208,14 @@ mod tests {
     use super::*;
     #[test]
     fn test_numeric_kp() {
-        let lookup = compute_distance_directional_kp(1);
+        let lookup = compute_distance_directional_kp(0);
         let lookup = compute_distance_numeric_kp(&lookup);
         for c in ['A', '1', '4', '7', '9'] {
             assert_eq!(0, lookup[nix(c)][nix(c)]);
         }
-        assert_eq!(4, lookup[nix('0')][nix('2')]);
-        assert_eq!(4, lookup[nix('0')][nix('8')]);
+        assert_eq!(2, lookup[nix('A')][nix('0')]);
+        assert_eq!(2, lookup[nix('0')][nix('2')]);
+        assert_eq!(6, lookup[nix('0')][nix('8')]);
     }
 
     #[test]
